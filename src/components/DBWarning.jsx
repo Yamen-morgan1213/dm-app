@@ -18,6 +18,9 @@ create table if not exists requests (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Grant privileges to public roles (anon and authenticated)
+grant all on table requests to anon, authenticated, service_role;
+
 -- Enable Row Level Security (RLS)
 alter table requests enable row level security;
 
