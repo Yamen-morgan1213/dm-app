@@ -59,7 +59,7 @@ function App() {
       <header className="navbar">
         <a href="/" onClick={(e) => { e.preventDefault(); setView('customer'); setActiveTrackCode(''); }} className="brand">
           <MessageSquare className="brand-icon" size={24} />
-          DirectMessage
+          Yamen Ebrahim
         </a>
 
         <div className="nav-actions">

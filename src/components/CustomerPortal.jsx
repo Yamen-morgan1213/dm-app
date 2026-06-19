@@ -30,6 +30,29 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
   const [generatedCode, setGeneratedCode] = useState('')
   const [copied, setCopied] = useState(false)
 
+  // Web Developer Request parameters
+  const [projectType, setProjectType] = useState('Custom Web App')
+  const [budget, setBudget] = useState('$1,500 - $5,000')
+  const [timeline, setTimeline] = useState('Standard (2-4 weeks)')
+  const [selectedFeatures, setSelectedFeatures] = useState([])
+
+  const availableFeatures = [
+    'User Authentication',
+    'E-commerce & Payments',
+    'Database Sync & APIs',
+    'Admin Control Panel',
+    'Responsive Mobile Layout',
+    'SEO & Performance Boost'
+  ]
+
+  const toggleFeature = (feature) => {
+    if (selectedFeatures.includes(feature)) {
+      setSelectedFeatures(selectedFeatures.filter(f => f !== feature))
+    } else {
+      setSelectedFeatures([...selectedFeatures, feature])
+    }
+  }
+
   // Load recent tracking codes from localStorage
   useEffect(() => {
     const stored = localStorage.getItem('dm_recent_requests')
@@ -137,11 +160,21 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
       type: f.type
     }))
 
+    // Format full details including custom web developer request parameters
+    const formattedMessage = `--- Web Development Request ---
+Project Type: ${projectType}
+Estimated Budget: ${budget}
+Timeline: ${timeline}
+Requested Features: ${selectedFeatures.length > 0 ? selectedFeatures.join(', ') : 'None'}
+
+--- Client Message / Notes ---
+${message}`
+
     // Thread initialization
     const initialThread = [
       {
         sender: 'customer',
-        message: message,
+        message: formattedMessage,
         created_at: new Date().toISOString()
       }
     ]
@@ -182,6 +215,10 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
       setTitle('')
       setMessage('')
       setFiles([])
+      setProjectType('Custom Web App')
+      setBudget('$1,500 - $5,000')
+      setTimeline('Standard (2-4 weeks)')
+      setSelectedFeatures([])
     } catch (err) {
       console.error(err)
       alert('Error submitting request: ' + err.message)
@@ -232,11 +269,11 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
         <>
           <div className="landing-hero slide-up">
             <h1 className="hero-title">
-              Connect Directly. <br />
-              <span className="hero-gradient-text">Get Results Faster.</span>
+              Welcome to <span className="hero-gradient-text">Yamen Ebrahim's</span> <br />
+              Development Studio
             </h1>
             <p className="hero-subtitle">
-              Submit your project requests, send details, photos, or files, and chat directly with our team in a sleek, unified, professional inbox.
+              Submit your web development requests, specify required capabilities, budget, and timeline, and chat directly with Yamen in a premium, real-time message board.
             </p>
             <div className="hero-actions">
               <button onClick={() => setMode('new')} className="btn-hero-primary">
@@ -363,6 +400,77 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
                   placeholder="e.g. Redesign Landing Page / Custom App Development" 
                   required
                 />
+              </div>
+
+              {/* Web Dev Questionnaire Section */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Project Type *</label>
+                  <select value={projectType} onChange={e => setProjectType(e.target.value)}>
+                    <option value="Custom Web App">Custom Web App</option>
+                    <option value="E-commerce Store">E-commerce Store</option>
+                    <option value="Landing Page / Showcase">Landing Page / Showcase</option>
+                    <option value="Mobile App Development">Mobile App Development</option>
+                    <option value="SEO & Performance Optimization">SEO & Performance</option>
+                    <option value="Other / Consultancy">Other / Consultancy</option>
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Estimated Budget *</label>
+                  <select value={budget} onChange={e => setBudget(e.target.value)}>
+                    <option value="< $500">&lt; $500</option>
+                    <option value="$500 - $1,500">$500 - $1,500</option>
+                    <option value="$1,500 - $5,000">$1,500 - $5,000</option>
+                    <option value="$5,000+">$5,000+</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Target Timeline *</label>
+                <select value={timeline} onChange={e => setTimeline(e.target.value)}>
+                  <option value="Urgently (< 2 weeks)">Urgently (&lt; 2 weeks)</option>
+                  <option value="Standard (2-4 weeks)">Standard (2-4 weeks)</option>
+                  <option value="Flexible (1-2 months)">Flexible (1-2 months)</option>
+                  <option value="Long Term Collaboration">Long Term Collaboration</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Requested Capabilities & Features</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
+                  {availableFeatures.map((feat) => {
+                    const isSelected = selectedFeatures.includes(feat);
+                    return (
+                      <label 
+                        key={feat} 
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px', 
+                          cursor: 'pointer',
+                          fontSize: '0.85rem',
+                          color: isSelected ? '#fff' : 'var(--color-text-secondary)',
+                          background: isSelected ? 'rgba(139, 92, 246, 0.1)' : 'rgba(255,255,255,0.02)',
+                          border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--border-color)',
+                          boxShadow: isSelected ? '0 0 10px rgba(139, 92, 246, 0.15)' : 'none',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <input 
+                          type="checkbox" 
+                          checked={isSelected}
+                          onChange={() => toggleFeature(feat)}
+                          style={{ width: 'auto', cursor: 'pointer' }}
+                        />
+                        {feat}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="form-group">
