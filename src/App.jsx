@@ -94,7 +94,7 @@ function App() {
             </span>
           ) : (
             <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
-              Client Request Desk
+              Web Developer for Hire
             </span>
           )}
         </div>

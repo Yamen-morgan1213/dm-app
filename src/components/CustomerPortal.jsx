@@ -269,18 +269,18 @@ ${message}`
         <>
           <div className="landing-hero slide-up">
             <h1 className="hero-title">
-              Welcome to <span className="hero-gradient-text">Yamen Ebrahim's</span> <br />
-              Development Studio
+              Need a Website? <br />
+              <span className="hero-gradient-text">Let Yamen Build It.</span>
             </h1>
             <p className="hero-subtitle">
-              Submit your web development requests, specify required capabilities, budget, and timeline, and chat directly with Yamen in a premium, real-time message board.
+              Tell me exactly what you need — a website, an app, an online store — and I'll bring it to life. Describe your project, set your budget and timeline, and we'll chat in real-time as I build it for you.
             </p>
             <div className="hero-actions">
               <button onClick={() => setMode('new')} className="btn-hero-primary">
-                <PlusCircle size={20} /> Create New Request
+                <PlusCircle size={20} /> Hire Me — Start a Project
               </button>
               <button onClick={() => setMode('track')} className="btn-hero-secondary">
-                <Clock size={20} /> Track Existing Request
+                <Clock size={20} /> Track My Project
               </button>
             </div>
           </div>
@@ -291,24 +291,24 @@ ${message}`
               <div className="feature-icon-wrapper">
                 <Send size={24} />
               </div>
-              <h3>Instant Submission</h3>
-              <p>State your needs, enter contact info, and generate a secure tracking key to stay connected instantly.</p>
+              <h3>Describe Your Vision</h3>
+              <p>Tell me what you want built — choose your project type, budget, timeline, and features. I'll handle the rest.</p>
             </div>
             
             <div className="feature-card glass-card glass-card-glow">
               <div className="feature-icon-wrapper">
                 <Paperclip size={24} />
               </div>
-              <h3>Photos & Files</h3>
-              <p>Upload layout designs, sample images, documents or photos up to 2.5MB per file to illustrate your idea.</p>
+              <h3>Share References</h3>
+              <p>Upload screenshots, mockups, logos, or any design references so I can match your exact vision.</p>
             </div>
 
             <div className="feature-card glass-card glass-card-glow">
               <div className="feature-icon-wrapper">
                 <CheckCircle2 size={24} />
               </div>
-              <h3>Real-Time Tracking</h3>
-              <p>Watch request status updates and exchange live direct messages with the administrator as we build.</p>
+              <h3>Track Progress Live</h3>
+              <p>Get a tracking code, watch your project status update in real-time, and message me directly as I work on it.</p>
             </div>
           </div>
 
@@ -316,7 +316,7 @@ ${message}`
           {recentCodes.length > 0 && (
             <div className="slide-up" style={{ animationDelay: '0.2s', maxWidth: '650px', margin: '0 auto 3rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: '1rem', textAlign: 'left' }}>
-                Your Recent Requests
+                Your Active Projects
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {recentCodes.map((item, idx) => (
@@ -364,40 +364,40 @@ ${message}`
 
           <div className="form-container glass-card">
             <div className="form-title-area">
-              <h2>New Request Details</h2>
-              <p>Tell us what you want, attach any relevant assets, and we'll reply directly.</p>
+              <h2>What Do You Want Me to Build?</h2>
+              <p>Fill out the details below and I'll review your project and get back to you with a plan. The more details you provide, the faster we can get started.</p>
             </div>
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label className="form-label">Full Name / Organization *</label>
+                <label className="form-label">Your Full Name / Business *</label>
                 <input 
                   type="text" 
                   value={name} 
                   onChange={e => setName(e.target.value)} 
-                  placeholder="e.g. John Doe or Acme Corp" 
+                  placeholder="e.g. Sarah Ahmed or Coffee Corner LLC" 
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Contact Email or Phone *</label>
+                <label className="form-label">How Can I Reach You? (Email or Phone) *</label>
                 <input 
                   type="text" 
                   value={contact} 
                   onChange={e => setContact(e.target.value)} 
-                  placeholder="e.g. john@example.com or +12345678" 
+                  placeholder="e.g. sarah@gmail.com or +961 71 123456" 
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Request Title / Topic *</label>
+                <label className="form-label">Project Name / What Are You Building? *</label>
                 <input 
                   type="text" 
                   value={title} 
                   onChange={e => setTitle(e.target.value)} 
-                  placeholder="e.g. Redesign Landing Page / Custom App Development" 
+                  placeholder="e.g. My Coffee Shop Website / Online Store for Clothing Brand" 
                   required
                 />
               </div>
@@ -438,7 +438,7 @@ ${message}`
               </div>
 
               <div className="form-group">
-                <label className="form-label">Requested Capabilities & Features</label>
+                <label className="form-label">What Features Do You Need?</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
                   {availableFeatures.map((feat) => {
                     const isSelected = selectedFeatures.includes(feat);
@@ -474,11 +474,11 @@ ${message}`
               </div>
 
               <div className="form-group">
-                <label className="form-label">Detailed Description of Needs *</label>
+                <label className="form-label">Tell Me More About Your Project *</label>
                 <textarea 
                   value={message} 
                   onChange={e => setMessage(e.target.value)} 
-                  placeholder="Describe your project, timeline, budget, or other notes in detail..." 
+                  placeholder="Describe what you want built in detail — what pages do you need? Any specific colors or style? Do you have a logo? Any website examples you like? The more you tell me, the better I can deliver..." 
                   rows={5}
                   required
                 />
@@ -486,7 +486,7 @@ ${message}`
 
               {/* Upload Zone */}
               <div className="form-group">
-                <label className="form-label">Photos & Files (Max 2.5MB each)</label>
+                <label className="form-label">Upload References — Logos, Mockups, Screenshots (Max 2.5MB each)</label>
                 <div 
                   className="upload-zone"
                   onDragOver={handleDragOver}
@@ -504,8 +504,8 @@ ${message}`
                   <div className="upload-icon-wrapper">
                     <UploadCloud size={36} />
                   </div>
-                  <div className="upload-text-main">Drag & Drop files here</div>
-                  <div className="upload-text-sub">or click to browse from computer</div>
+                  <div className="upload-text-main">Drag & Drop your files here</div>
+                  <div className="upload-text-sub">logos, screenshots, mockups — or click to browse</div>
                 </div>
 
                 {/* Previews */}
@@ -542,7 +542,7 @@ ${message}`
                 className="btn-submit-form" 
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Submitting Details...' : 'Submit Request'}
+                {isSubmitting ? 'Sending to Yamen...' : 'Submit My Project'}
                 <Send size={18} />
               </button>
             </form>
@@ -560,9 +560,9 @@ ${message}`
           </div>
 
           <div className="tracking-search-container glass-card">
-            <div className="tracking-search-title">Track Your Request</div>
+            <div className="tracking-search-title">Track Your Project</div>
             <p className="tracking-search-desc">
-              Enter the unique tracking code you received when submitting your request to access the chat and status tracker.
+              Enter the tracking code you received when you submitted your project. You'll be able to see the status, chat with Yamen, and follow the progress live.
             </p>
 
             <form onSubmit={handleTrackSubmit} className="tracking-search-form">
@@ -599,10 +599,9 @@ ${message}`
           <div className="success-icon-wrapper">
             <Check size={40} />
           </div>
-          <h2 className="success-title">Request Submitted Successfully!</h2>
+          <h2 className="success-title">Project Submitted to Yamen!</h2>
           <p className="success-desc">
-            Your request has been filed in our database. Please save the tracking code below. 
-            You can use it to track our progress, download design outputs, and send messages back and forth.
+            Your project details have been sent. Save the tracking code below — you'll need it to check on progress, message Yamen directly, and receive updates as your project is being built.
           </p>
 
           <div className="tracking-code-display-box">
@@ -618,7 +617,7 @@ ${message}`
 
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
             <button onClick={() => onTrackRequest(generatedCode)} className="btn-hero-primary">
-              <Eye size={18} /> Open Status & Chat
+              <Eye size={18} /> View Project & Chat with Yamen
             </button>
             <button onClick={() => setMode('home')} className="btn-hero-secondary">
               Back to Home

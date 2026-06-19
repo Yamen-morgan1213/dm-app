@@ -300,11 +300,11 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
           <div className="chat-header">
             <div className="chat-header-title">
               <MessageSquare size={18} className="text-primary" style={{ color: 'var(--color-primary)' }} />
-              Direct Message Feed
+              Project Chat
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
               <Sparkles size={12} className="text-primary" style={{ color: 'var(--color-secondary)' }} />
-              End-to-End Thread
+              Live Conversation
             </div>
           </div>
 
@@ -345,7 +345,7 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
                     )}
                     
                     <div className="msg-meta">
-                      {msg.sender === 'admin' ? 'Support Agent' : 'Client'} • {formatDate(msg.created_at)}
+                      {msg.sender === 'admin' ? 'Yamen' : 'You'} • {formatDate(msg.created_at)}
                     </div>
                   </div>
                 )
