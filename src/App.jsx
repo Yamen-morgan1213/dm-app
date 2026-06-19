@@ -13,6 +13,24 @@ function App() {
   const [dbValid, setDbValid] = useState(null) // null = loading, true = OK, false = error/missing table
   const [dbError, setDbError] = useState(null)
 
+  // Listen to hash changes for secret admin route (#admin)
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#admin') {
+        setView('admin')
+      } else if (window.location.hash === '' || window.location.hash === '#customer') {
+        setView('customer')
+        setActiveTrackCode('')
+      }
+    }
+
+    // Check hash on initial load
+    handleHashChange()
+
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
   // Verify that the database is set up and accessible
   const verifyDatabase = async () => {
     try {
@@ -57,25 +75,28 @@ function App() {
 
       {/* Sticky Header Navbar */}
       <header className="navbar">
-        <a href="/" onClick={(e) => { e.preventDefault(); setView('customer'); setActiveTrackCode(''); }} className="brand">
+        <a 
+          href="#customer" 
+          onClick={(e) => { 
+            e.preventDefault(); 
+            window.location.hash = '#customer';
+          }} 
+          className="brand"
+        >
           <MessageSquare className="brand-icon" size={24} />
           Yamen Ebrahim
         </a>
 
         <div className="nav-actions">
-          <button 
-            onClick={() => { setView('customer'); setActiveTrackCode(''); }} 
-            className={`btn-nav ${view === 'customer' ? 'active' : ''}`}
-          >
-            <Activity size={16} /> Customer Portal
-          </button>
-          
-          <button 
-            onClick={() => { setView('admin'); setActiveTrackCode(''); }} 
-            className={`btn-admin-toggle ${view === 'admin' ? 'active' : ''}`}
-          >
-            <Shield size={16} /> Admin Portal
-          </button>
+          {view === 'admin' ? (
+            <span className="status-badge in_progress" style={{ fontSize: '0.75rem' }}>
+              Admin Session Active
+            </span>
+          ) : (
+            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+              Client Request Desk
+            </span>
+          )}
         </div>
       </header>
 
@@ -115,10 +136,7 @@ function App() {
       {/* Footer */}
       <footer className="footer">
         <div>
-          &copy; {new Date().getFullYear()} DirectMessage Inc. Built for lightning-fast customer updates.
-          <a href="#" onClick={(e) => { e.preventDefault(); setView('admin'); }} className="footer-link">
-            Admin Access
-          </a>
+          &copy; {new Date().getFullYear()} Yamen Ebrahim. Built for lightning-fast customer web development updates.
         </div>
       </footer>
     </div>
