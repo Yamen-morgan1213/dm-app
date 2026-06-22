@@ -137,6 +137,12 @@ body {
   will-change: transform;
 }
 
+@media (max-width: 768px) {
+  .bg-glow-container {
+    display: none;
+  }
+}
+
 .bg-glow-1 {
   background: linear-gradient(135deg, #8b5cf6, #6366f1);
   width: 500px;

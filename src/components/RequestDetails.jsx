@@ -393,19 +393,36 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
 
                     {msg.attachment && (
                       <div 
-                        className="chat-attachment-indicator" 
+                        style={{ 
+                          cursor: 'pointer', 
+                          alignSelf: isSentByMe ? 'flex-end' : 'flex-start',
+                          marginTop: '0.5rem',
+                          maxWidth: '280px',
+                          width: '100%'
+                        }}
                         onClick={() => setActiveLightboxFile(msg.attachment)}
-                        style={{ cursor: 'pointer', alignSelf: isSentByMe ? 'flex-end' : 'flex-start' }}
                       >
                         {(msg.attachment.type?.startsWith('image/') || msg.attachment.url?.startsWith('data:image/')) ? (
-                          <img src={msg.attachment.url} alt={msg.attachment.name} />
+                          <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', transition: 'transform 0.2s' }} className="chat-image-preview-wrapper">
+                            <img 
+                              src={msg.attachment.url} 
+                              alt={msg.attachment.name} 
+                              style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', display: 'block' }}
+                            />
+                            <div style={{ padding: '6px 12px', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '0.72rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>{msg.attachment.name}</span>
+                              <Download size={12} style={{ flexShrink: 0, marginLeft: '6px' }} />
+                            </div>
+                          </div>
                         ) : (
-                          <FileText size={16} />
+                          <div className="chat-attachment-indicator">
+                            <FileText size={16} />
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>
+                              {msg.attachment.name}
+                            </span>
+                            <Download size={12} style={{ opacity: 0.6 }} />
+                          </div>
                         )}
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>
-                          {msg.attachment.name}
-                        </span>
-                        <Download size={12} style={{ opacity: 0.6 }} />
                       </div>
                     )}
                     
