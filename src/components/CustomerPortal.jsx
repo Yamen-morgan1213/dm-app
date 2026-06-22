@@ -5,8 +5,10 @@ import {
   Sparkles, DollarSign, Zap, MessageSquare, Star, ArrowRight
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useToast } from './Toast'
 
 export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
+  const toast = useToast()
   const [mode, setMode] = useState('home') // home, new, track, success
   const [formStep, setFormStep] = useState(1) // 1, 2, 3
 
@@ -80,7 +82,7 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
     const newFiles = []
     for (let file of selectedFiles) {
       if (file.size > 2.5 * 1024 * 1024) {
-        alert(`File "${file.name}" exceeds the 2.5MB size limit.`)
+        toast(`"${file.name}" exceeds 2.5MB limit`, 'warning')
         continue
       }
       try {
@@ -118,7 +120,7 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!name.trim() || !contact.trim() || !title.trim() || !message.trim()) {
-      alert('Please fill out all required fields.')
+      toast('Please fill out all required fields', 'warning')
       return
     }
 
@@ -189,7 +191,7 @@ ${message}`
       setFormStep(1)
     } catch (err) {
       console.error(err)
-      alert('Error submitting request: ' + err.message)
+      toast('Error submitting request: ' + err.message, 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -232,12 +234,12 @@ ${message}`
   const validateStep = (step) => {
     if (step === 1) {
       if (!title.trim() || !projectType) {
-        alert('Please fill out the project title and select a type.')
+        toast('Please fill out the project title and type', 'warning')
         return false
       }
     } else if (step === 2) {
       if (!message.trim() || !budget || !timeline) {
-        alert('Please describe your project and select budget/timeline.')
+        toast('Please describe your project and select budget/timeline', 'warning')
         return false
       }
     }
@@ -444,32 +446,44 @@ ${message}`
 
                   <div className="form-group">
                     <label className="form-label">Key Features Required</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.6rem', marginTop: '0.5rem' }}>
                       {availableFeatures.map((feat) => {
                         const isSelected = selectedFeatures.includes(feat);
                         return (
                           <label 
                             key={feat} 
+                            onClick={() => toggleFeature(feat)}
                             style={{ 
                               display: 'flex', 
                               alignItems: 'center', 
                               gap: '10px', 
                               cursor: 'pointer',
-                              fontSize: '0.85rem',
+                              fontSize: '0.82rem',
                               color: isSelected ? '#fff' : 'var(--color-text-secondary)',
-                              background: isSelected ? 'rgba(139, 92, 246, 0.05)' : 'rgba(255,255,255,0.01)',
+                              background: isSelected ? 'rgba(139, 92, 246, 0.06)' : 'rgba(255,255,255,0.02)',
                               border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--border-color)',
-                              padding: '10px 14px',
+                              padding: '9px 12px',
                               borderRadius: '8px',
-                              transition: 'all 0.2s'
+                              transition: 'all 0.2s',
+                              userSelect: 'none'
                             }}
                           >
-                            <input 
-                              type="checkbox" 
-                              checked={isSelected}
-                              onChange={() => toggleFeature(feat)}
-                              style={{ width: 'auto', cursor: 'pointer' }}
-                            />
+                            <span style={{
+                              width: '16px',
+                              height: '16px',
+                              borderRadius: '4px',
+                              border: isSelected ? '1px solid var(--color-primary)' : '1px solid rgba(255,255,255,0.2)',
+                              background: isSelected ? 'var(--color-primary)' : 'transparent',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              fontSize: '10px',
+                              color: '#fff',
+                              transition: 'all 0.2s'
+                            }}>
+                              {isSelected && '✓'}
+                            </span>
                             {feat}
                           </label>
                         );
