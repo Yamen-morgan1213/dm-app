@@ -1,19 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { 
-  Lock, 
-  Search, 
-  Filter, 
-  LogOut, 
-  ChevronRight, 
-  MessageSquare, 
-  RefreshCw,
-  FolderOpen,
-  ArrowLeft,
-  Mail,
-  User,
-  CheckCircle2,
-  Calendar,
-  Sparkles
+  Lock, Search, Filter, LogOut, ChevronRight, MessageSquare, RefreshCw,
+  FolderOpen, ArrowLeft, Mail, User, CheckCircle2, Calendar, Sparkles,
+  Bell, Trash2, TrendingUp, Clock, AlertCircle, Zap
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import RequestDetails from './RequestDetails'
@@ -27,17 +16,16 @@ export default function AdminPortal() {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all') // all, pending, in_progress, completed, declined
+  const [statusFilter, setStatusFilter] = useState('all')
   const [selectedCode, setSelectedCode] = useState(null)
-  
-  // Mobile responsiveness
-  const [mobilePane, setMobilePane] = useState('list') // list, detail
+  const [mobilePane, setMobilePane] = useState('list')
+  const [toasts, setToasts] = useState([])
+  const [lastFetchCount, setLastFetchCount] = useState(0)
 
   // Check auth on load
   useEffect(() => {
     const authSession = localStorage.getItem('dm_admin_session')
     if (authSession) {
-      // Validate session is less than 24 hours old
       const timeElapsed = Date.now() - parseInt(authSession)
       if (timeElapsed < 24 * 60 * 60 * 1000) {
         setIsAuthenticated(true)
@@ -47,40 +35,89 @@ export default function AdminPortal() {
     }
   }, [])
 
+  // Toast helper
+  const addToast = useCallback((title, message, type = 'info') => {
+    const id = Date.now()
+    setToasts(prev => [...prev, { id, title, message, type }])
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id))
+    }, 5000)
+  }, [])
+
   // Fetch all requests
-  const fetchAllRequests = async () => {
+  const fetchAllRequests = useCallback(async () => {
     if (!isAuthenticated) return
     setLoading(true)
     try {
       const { data, error } = await supabase
         .from('requests')
         .select('*')
-        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) throw error
+      
+      // Detect new requests
+      if (lastFetchCount > 0 && data && data.length > lastFetchCount) {
+        const diff = data.length - lastFetchCount
+        addToast('New Request!', `${diff} new project request${diff > 1 ? 's' : ''} received`, 'success')
+        // Play notification sound
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)()
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.frequency.value = 800
+          osc.type = 'sine'
+          gain.gain.value = 0.1
+          osc.start()
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3)
+          osc.stop(ctx.currentTime + 0.3)
+        } catch(e) {}
+      }
+      setLastFetchCount(data?.length || 0)
       setRequests(data || [])
     } catch (err) {
       console.error('Error fetching requests:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [isAuthenticated, lastFetchCount, addToast])
 
-  useEffect(() => {
-    fetchAllRequests()
-  }, [isAuthenticated])
+  useEffect(() => { fetchAllRequests() }, [isAuthenticated])
 
-  // Poll database for new requests every 10 seconds
+  // Real-time subscription
   useEffect(() => {
     if (!isAuthenticated) return
-    const interval = setInterval(() => {
-      fetchAllRequests()
-    }, 10000)
+    
+    const channel = supabase
+      .channel('admin_realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requests' }, (payload) => {
+        setRequests(prev => [payload.new, ...prev])
+        addToast('🔔 New Project Request', `${payload.new.customer_name} — ${payload.new.title}`, 'success')
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)()
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.connect(gain); gain.connect(ctx.destination)
+          osc.frequency.value = 880; osc.type = 'sine'; gain.gain.value = 0.12
+          osc.start(); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
+          osc.stop(ctx.currentTime + 0.4)
+        } catch(e) {}
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests' }, (payload) => {
+        setRequests(prev => prev.map(r => r.id === payload.new.id ? payload.new : r))
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'requests' }, (payload) => {
+        setRequests(prev => prev.filter(r => r.id !== payload.old.id))
+      })
+      .subscribe()
 
-    return () => clearInterval(interval)
-  }, [isAuthenticated])
+    // Backup polling every 15s
+    const interval = setInterval(fetchAllRequests, 15000)
+    return () => { supabase.removeChannel(channel); clearInterval(interval) }
+  }, [isAuthenticated, addToast])
 
-  // Handle Login
   const handleLogin = (e) => {
     e.preventDefault()
     if (password === '112434') {
@@ -96,7 +133,6 @@ export default function AdminPortal() {
     }
   }
 
-  // Handle Logout
   const handleLogout = () => {
     setIsAuthenticated(false)
     localStorage.removeItem('dm_admin_session')
@@ -104,45 +140,71 @@ export default function AdminPortal() {
     setMobilePane('list')
   }
 
-  // Handle Status Update
   const handleStatusChange = async (requestId, newStatus) => {
     try {
       const { data, error } = await supabase
         .from('requests')
-        .update({ 
-          status: newStatus, 
-          updated_at: new Date().toISOString() 
-        })
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', requestId)
         .select()
         .single()
-
       if (error) throw error
-      
-      // Update local state list
       setRequests(requests.map(r => r.id === requestId ? data : r))
+      addToast('Status Updated', `Request marked as ${newStatus.replace('_', ' ')}`)
     } catch (err) {
       console.error(err)
       alert('Failed to update status: ' + err.message)
     }
   }
 
-  // Filter and Search Requests
+  const handleDelete = async (requestId) => {
+    if (!confirm('Are you sure you want to delete this request? This cannot be undone.')) return
+    try {
+      const { error } = await supabase.from('requests').delete().eq('id', requestId)
+      if (error) throw error
+      setRequests(requests.filter(r => r.id !== requestId))
+      if (selectedCode) {
+        const deleted = requests.find(r => r.id === requestId)
+        if (deleted && deleted.tracking_code === selectedCode) {
+          setSelectedCode(null)
+          setMobilePane('list')
+        }
+      }
+      addToast('Request Deleted', 'The request has been permanently removed.')
+    } catch (err) {
+      alert('Failed to delete: ' + err.message)
+    }
+  }
+
+  // Stats
+  const stats = {
+    total: requests.length,
+    pending: requests.filter(r => r.status === 'pending').length,
+    inProgress: requests.filter(r => r.status === 'in_progress').length,
+    completed: requests.filter(r => r.status === 'completed').length,
+  }
+
   const filteredRequests = requests.filter(req => {
     const matchesSearch = 
       req.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       req.tracking_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       req.title?.toLowerCase().includes(searchQuery.toLowerCase())
-      
     const matchesFilter = statusFilter === 'all' || req.status === statusFilter
-    
     return matchesSearch && matchesFilter
   })
 
-  // Format date helper
   const formatDate = (isoString) => {
     if (!isoString) return ''
     const date = new Date(isoString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHrs = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHrs < 24) return `${diffHrs}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
   }
 
@@ -156,7 +218,7 @@ export default function AdminPortal() {
             <Lock size={28} />
           </div>
           <h2 className="admin-login-title">Admin Dashboard</h2>
-          <p className="admin-login-desc">Please enter the security access pin to review client messages and update request statuses.</p>
+          <p className="admin-login-desc">Enter your security pin to access the admin panel and manage client requests.</p>
           
           <form onSubmit={handleLogin}>
             <div className="form-group" style={{ marginBottom: '1rem' }}>
@@ -164,17 +226,15 @@ export default function AdminPortal() {
                 type="password" 
                 value={password} 
                 onChange={e => setPassword(e.target.value)} 
-                placeholder="Access Password" 
-                style={{ textAlign: 'center', letterSpacing: '0.2em', fontSize: '1.2rem' }}
+                placeholder="••••••" 
+                style={{ textAlign: 'center', letterSpacing: '0.3em', fontSize: '1.4rem' }}
                 autoFocus
                 required
               />
             </div>
-            
             {loginError && <div className="login-error-msg">{loginError}</div>}
-            
             <button type="submit" className="btn-admin-login">
-              Authenticate
+              <Zap size={16} style={{ marginRight: 6 }} /> Authenticate
             </button>
           </form>
         </div>
@@ -184,61 +244,100 @@ export default function AdminPortal() {
 
   return (
     <div className="fade-in" style={{ width: '100%' }}>
-      {/* Admin Panel Header */}
-      <div 
-        className="glass-card" 
-        style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          padding: '1rem 2rem', 
-          marginBottom: '2rem',
-          border: '1px solid var(--border-color)'
-        }}
-      >
+      {/* Toast Notifications */}
+      {toasts.length > 0 && (
+        <div className="toast-container">
+          {toasts.map(t => (
+            <div key={t.id} className="toast">
+              <div className="toast-icon">
+                <Bell size={18} />
+              </div>
+              <div className="toast-content">
+                <div className="toast-title">{t.title}</div>
+                <div className="toast-message">{t.message}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Stats Cards */}
+      <div className="admin-stats-row">
+        <div className="stat-card glass-card" onClick={() => setStatusFilter('all')}>
+          <div className="stat-icon" style={{ background: 'rgba(139,92,246,0.1)', color: 'var(--color-primary)' }}>
+            <TrendingUp size={20} />
+          </div>
+          <div className="stat-info">
+            <div className="stat-value">{stats.total}</div>
+            <div className="stat-label">Total</div>
+          </div>
+        </div>
+        <div className="stat-card glass-card" onClick={() => setStatusFilter('pending')}>
+          <div className="stat-icon" style={{ background: 'var(--status-pending-bg)', color: 'var(--status-pending)' }}>
+            <Clock size={20} />
+          </div>
+          <div className="stat-info">
+            <div className="stat-value">{stats.pending}</div>
+            <div className="stat-label">Pending</div>
+          </div>
+        </div>
+        <div className="stat-card glass-card" onClick={() => setStatusFilter('in_progress')}>
+          <div className="stat-icon" style={{ background: 'var(--status-progress-bg)', color: 'var(--status-progress)' }}>
+            <Zap size={20} />
+          </div>
+          <div className="stat-info">
+            <div className="stat-value">{stats.inProgress}</div>
+            <div className="stat-label">In Progress</div>
+          </div>
+        </div>
+        <div className="stat-card glass-card" onClick={() => setStatusFilter('completed')}>
+          <div className="stat-icon" style={{ background: 'var(--status-completed-bg)', color: 'var(--status-completed)' }}>
+            <CheckCircle2 size={20} />
+          </div>
+          <div className="stat-info">
+            <div className="stat-value">{stats.completed}</div>
+            <div className="stat-label">Completed</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Admin Header */}
+      <div className="admin-panel-header glass-card">
         <div style={{ textAlign: 'left' }}>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={20} className="text-primary" style={{ color: 'var(--color-primary)' }} />
-            Administrator Inbox
+          <h2 className="admin-panel-title">
+            <Sparkles size={20} style={{ color: 'var(--color-primary)' }} />
+            Command Center
           </h2>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', margin: 0 }}>
-            Managing {requests.length} client requests • Auto-refresh active
+          <p className="admin-panel-subtitle">
+            {requests.length} client requests • Real-time sync active
+            <span className="live-dot"></span>
           </p>
         </div>
-        <button onClick={handleLogout} className="btn-nav" style={{ color: 'var(--status-declined)' }}>
-          <LogOut size={16} /> Log Out
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button onClick={fetchAllRequests} className="btn-nav" disabled={loading} title="Refresh">
+            <RefreshCw size={15} className={loading ? 'spin-anim' : ''} />
+          </button>
+          <button onClick={handleLogout} className="btn-nav" style={{ color: 'var(--status-declined)' }}>
+            <LogOut size={15} /> Log Out
+          </button>
+        </div>
       </div>
 
       <div className={`admin-dashboard ${mobilePane === 'detail' ? 'show-details' : 'show-list'}`}>
-        
-        {/* Sidebar list view */}
-        <div className="admin-sidebar glass-card" style={{ padding: '1.5rem' }}>
+        {/* Sidebar */}
+        <div className="admin-sidebar glass-card" style={{ padding: '1.25rem' }}>
           <div className="sidebar-header">
-            <div className="sidebar-title">
-              Requests 
-              <button 
-                onClick={fetchAllRequests} 
-                style={{ background: 'none', color: 'var(--color-text-muted)' }}
-                disabled={loading}
-                title="Refresh requests"
-              >
-                <RefreshCw size={14} className={loading ? 'spin-anim' : ''} />
-              </button>
-            </div>
-            
             <div className="search-wrapper">
               <input 
                 type="text" 
                 value={searchQuery} 
                 onChange={e => setSearchQuery(e.target.value)} 
-                placeholder="Search code, name..." 
+                placeholder="Search requests..." 
                 className="search-input"
               />
-              <Search size={16} className="search-icon" />
+              <Search size={15} className="search-icon" />
             </div>
 
-            {/* Filter chips */}
             <div className="filters-row">
               {['all', 'pending', 'in_progress', 'completed', 'declined'].map((filterVal) => (
                 <button
@@ -246,27 +345,23 @@ export default function AdminPortal() {
                   onClick={() => setStatusFilter(filterVal)}
                   className={`filter-chip ${statusFilter === filterVal ? 'active' : ''}`}
                 >
-                  {filterVal.replace('_', ' ')}
+                  {filterVal === 'all' ? 'All' : filterVal.replace('_', ' ')}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* List items */}
           <div className="requests-list-container">
             {filteredRequests.length > 0 ? (
               filteredRequests.map((req) => (
                 <div
                   key={req.id}
-                  onClick={() => {
-                    setSelectedCode(req.tracking_code)
-                    setMobilePane('detail')
-                  }}
+                  onClick={() => { setSelectedCode(req.tracking_code); setMobilePane('detail') }}
                   className={`request-list-item glass-card ${selectedCode === req.tracking_code ? 'selected' : ''}`}
                 >
                   <div className="item-header">
                     <span className="item-code">{req.tracking_code}</span>
-                    <span className={`status-badge ${req.status}`} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
+                    <span className={`status-badge ${req.status}`} style={{ fontSize: '0.62rem', padding: '2px 8px' }}>
                       {req.status.replace('_', ' ')}
                     </span>
                   </div>
@@ -274,42 +369,43 @@ export default function AdminPortal() {
                   <div className="item-title">{req.title}</div>
                   <div className="item-footer">
                     <span>{formatDate(req.created_at)}</span>
-                    <ChevronRight size={14} />
+                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(req.id) }}
+                        className="btn-delete-mini"
+                        title="Delete request"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                      <ChevronRight size={14} />
+                    </div>
                   </div>
                 </div>
               ))
             ) : (
               <div className="no-requests-placeholder">
-                <FolderOpen size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
+                <FolderOpen size={32} style={{ marginBottom: '0.5rem', opacity: 0.4 }} />
                 <div>No requests found</div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Details View */}
+        {/* Details */}
         <div className="admin-detail-view">
           {selectedCode ? (
             <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-              
-              {/* Header inside detail view for changing status */}
               {selectedRequest && (
                 <div className="admin-detail-header">
                   <div className="admin-detail-header-left">
-                    {/* Back button for mobile view */}
-                    <button 
-                      onClick={() => setMobilePane('list')} 
-                      className="btn-back"
-                      style={{ marginRight: '8px', display: 'flex' }}
-                    >
+                    <button onClick={() => setMobilePane('list')} className="btn-back" style={{ marginRight: '8px', display: 'flex' }}>
                       <ArrowLeft size={18} />
                     </button>
                     <div style={{ textAlign: 'left' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', display: 'block' }}>Active Client</span>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Client</span>
                       <strong style={{ fontSize: '1.05rem', color: '#fff' }}>{selectedRequest.customer_name}</strong>
                     </div>
                   </div>
-                  
                   <div className="admin-detail-header-actions">
                     <div className="status-select-wrapper">
                       <span>Status:</span>
@@ -327,28 +423,22 @@ export default function AdminPortal() {
                   </div>
                 </div>
               )}
-
-              {/* Renders the full details and live chat */}
               <div style={{ flex: 1, minHeight: 0 }}>
                 <RequestDetails 
                   trackingCode={selectedCode} 
                   isAdminView={true}
-                  onBack={() => {
-                    setSelectedCode(null)
-                    setMobilePane('list')
-                  }}
+                  onBack={() => { setSelectedCode(null); setMobilePane('list') }}
                 />
               </div>
             </div>
           ) : (
             <div className="admin-detail-placeholder glass-card">
               <MessageSquare size={48} className="placeholder-icon" />
-              <h3>No Request Selected</h3>
-              <p>Choose a request from the sidebar list to inspect project details, download files, and send direct messages.</p>
+              <h3>Select a Request</h3>
+              <p>Choose a request from the sidebar to view project details, files, and chat with the client.</p>
             </div>
           )}
         </div>
-
       </div>
     </div>
   )

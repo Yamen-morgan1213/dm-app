@@ -1,17 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { 
-  ArrowLeft, 
-  Send, 
-  Paperclip, 
-  X, 
-  Clock, 
-  User, 
-  Mail, 
-  FileText, 
-  MessageSquare,
-  Sparkles,
-  Download,
-  AlertCircle
+  ArrowLeft, Send, Paperclip, X, Clock, User, Mail, FileText, 
+  MessageSquare, Sparkles, Download, AlertCircle, RefreshCw,
+  FolderPlus, Layers, Calendar, ExternalLink
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import Lightbox from './Lightbox'
@@ -29,7 +20,8 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
   const fileInputRef = useRef(null)
 
   // Fetch request details
-  const fetchRequestDetails = async () => {
+  const fetchRequestDetails = async (showLoading = false) => {
+    if (showLoading) setLoading(true)
     try {
       const { data, error } = await supabase
         .from('requests')
@@ -43,14 +35,12 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
       console.error(err)
       setError('Could not retrieve request details. Please check the tracking code.')
     } finally {
-      setLoading(false)
+      if (showLoading) setLoading(false)
     }
   }
 
   useEffect(() => {
-    setLoading(true)
-    setError('')
-    fetchRequestDetails()
+    fetchRequestDetails(true)
   }, [trackingCode])
 
   // Setup Real-time & Polling
@@ -62,22 +52,17 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
       .channel(`request_changes_${request.id}`)
       .on(
         'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'requests',
-          filter: `id=eq.${request.id}`
-        },
+        { event: 'UPDATE', schema: 'public', table: 'requests', filter: `id=eq.${request.id}` },
         (payload) => {
           setRequest(payload.new)
         }
       )
       .subscribe()
 
-    // Polling interval (backup if RLS / websocket fails)
+    // Backup polling every 8s
     const interval = setInterval(() => {
-      fetchRequestDetails()
-    }, 6000)
+      fetchRequestDetails(false)
+    }, 8000)
 
     return () => {
       supabase.removeChannel(channel)
@@ -85,7 +70,6 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
     }
   }, [request?.id])
 
-  // Scroll to bottom
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -94,14 +78,17 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
     scrollToBottom()
   }, [request?.thread])
 
-  // Format date helper
   const formatDate = (isoString) => {
     if (!isoString) return ''
     const date = new Date(isoString)
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    return date.toLocaleDateString(undefined, { 
+      month: 'short', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    })
   }
 
-  // Handle chat file attachment
   const handleChatFileChange = (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -133,13 +120,11 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
     }
   }
 
-  // Send Message
   const handleSendMessage = async (e) => {
     e.preventDefault()
     if (!newMessage.trim() && !chatFile) return
 
     setSending(true)
-
     const chatMsg = {
       sender: isAdminView ? 'admin' : 'customer',
       message: newMessage.trim(),
@@ -155,7 +140,6 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
       }
     }
 
-    // Append to existing thread
     const updatedThread = [...(request.thread || []), chatMsg]
 
     try {
@@ -186,19 +170,19 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '5rem 0', color: 'var(--color-text-secondary)' }}>
-        <div className="placeholder-icon" style={{ animation: 'spin 2s linear infinite' }}>🔄</div>
-        <h3>Loading request details...</h3>
+      <div style={{ textAlign: 'center', padding: '6rem 0', color: 'var(--color-text-secondary)' }}>
+        <div className="placeholder-icon spin-anim" style={{ fontSize: '2rem', display: 'inline-block', marginBottom: '1rem' }}>🔄</div>
+        <h3>Securing connection thread...</h3>
       </div>
     )
   }
 
   if (error || !request) {
     return (
-      <div className="glass-card" style={{ maxWidth: '550px', margin: '4rem auto', padding: '3rem', textAlign: 'center' }}>
+      <div className="glass-card" style={{ maxWidth: '580px', margin: '4rem auto', padding: '3.5rem', textAlign: 'center' }}>
         <AlertCircle size={48} style={{ color: 'var(--status-declined)', marginBottom: '1.5rem', marginInline: 'auto' }} />
         <h3>Retrieval Failed</h3>
-        <p style={{ color: 'var(--color-text-secondary)', marginBottom: '2rem' }}>{error || 'Request not found.'}</p>
+        <p style={{ color: 'var(--color-text-secondary)', marginBottom: '2rem' }}>{error || 'Request room not found.'}</p>
         <button onClick={onBack} className="btn-hero-primary" style={{ marginInline: 'auto' }}>
           Go Back
         </button>
@@ -206,7 +190,6 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
     )
   }
 
-  // Format file size
   const formatBytes = (bytes) => {
     if (!bytes) return ''
     const k = 1024
@@ -215,63 +198,144 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
+  // Extract web development parameters if present
+  let devParams = null
+  const descText = request.thread?.[0]?.message || ''
+  if (descText.includes('--- Web Development Request ---')) {
+    try {
+      const parts = descText.split('--- Client Message / Notes ---')
+      const paramBlock = parts[0].replace('--- Web Development Request ---', '').trim()
+      const lines = paramBlock.split('\n').filter(l => l.trim() !== '')
+      
+      devParams = {
+        projectType: lines.find(l => l.startsWith('Project Type:'))?.replace('Project Type:', '').trim(),
+        budget: lines.find(l => l.startsWith('Estimated Budget:'))?.replace('Estimated Budget:', '').trim(),
+        timeline: lines.find(l => l.startsWith('Timeline:'))?.replace('Timeline:', '').trim(),
+        features: lines.find(l => l.startsWith('Requested Features:'))?.replace('Requested Features:', '').trim(),
+        notes: parts[1]?.trim() || ''
+      }
+    } catch (e) {
+      console.warn('Params extraction failed:', e)
+    }
+  }
+
   return (
-    <div className="fade-in">
-      {/* Back Header */}
-      <div className="back-btn-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button onClick={onBack} className="btn-back">
-          <ArrowLeft size={16} /> {isAdminView ? 'Back to Dashboard' : 'Back to Portal'}
-        </button>
-        <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Clock size={14} /> Last updated: {formatDate(request.updated_at)}
+    <div className="fade-in" style={{ width: '100%' }}>
+      {/* Header */}
+      {!isAdminView && (
+        <div className="back-btn-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button onClick={onBack} className="btn-back">
+            <ArrowLeft size={16} /> Back to Portal
+          </button>
+          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Clock size={14} /> Synced: {formatDate(request.updated_at)}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="request-details-grid">
-        {/* Left Side: Request Details Card */}
+        {/* Left Side: Specifications Panel */}
         <div className="details-panel glass-card">
-          <div className="detail-row">
+          <div className="detail-row" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <div className="detail-label">Tracking Code</div>
-                <div className="tracking-code-value" style={{ fontSize: '1.4rem', fontFamily: 'monospace' }}>
+                <div className="detail-label">Project Tracking ID</div>
+                <div className="tracking-code-value" style={{ fontSize: '1.35rem', fontFamily: 'monospace', fontWeight: 800, color: 'var(--color-primary-light)' }}>
                   {request.tracking_code}
                 </div>
               </div>
-              <span className={`status-badge ${request.status}`}>
-                {request.status.replace('_', ' ')}
-              </span>
+              {!isAdminView && (
+                <span className={`status-badge ${request.status}`}>
+                  {request.status.replace('_', ' ')}
+                </span>
+              )}
             </div>
           </div>
 
           <div className="detail-row">
             <div className="detail-label">Subject / Title</div>
-            <div className="detail-value" style={{ fontSize: '1.1rem' }}>{request.title}</div>
-          </div>
-
-          <div className="detail-row">
-            <div className="detail-label">Client Name</div>
-            <div className="detail-value" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <User size={14} className="text-muted" /> {request.customer_name}
+            <div className="detail-value" style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 750 }}>
+              {request.title}
             </div>
           </div>
 
-          <div className="detail-row">
-            <div className="detail-label">Contact Information</div>
-            <div className="detail-value" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Mail size={14} className="text-muted" /> {request.contact_info}
-            </div>
-          </div>
+          {/* Render Extracted Specifications */}
+          {devParams ? (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }} className="detail-row">
+                <div>
+                  <div className="detail-label">Project Type</div>
+                  <div className="detail-value" style={{ fontSize: '0.9rem' }}>{devParams.projectType}</div>
+                </div>
+                <div>
+                  <div className="detail-label">Timeline</div>
+                  <div className="detail-value" style={{ fontSize: '0.9rem' }}>{devParams.timeline}</div>
+                </div>
+              </div>
 
-          <div className="detail-row">
-            <div className="detail-label">Original Description</div>
-            <div className="detail-desc">{request.thread?.[0]?.message || 'No description provided.'}</div>
-          </div>
+              <div className="detail-row">
+                <div className="detail-label">Budget Range</div>
+                <div className="detail-value" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--status-completed)', fontSize: '0.9rem' }}>
+                  💰 {devParams.budget}
+                </div>
+              </div>
+
+              <div className="detail-row">
+                <div className="detail-label">Included Features</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                  {devParams.features && devParams.features !== 'None' ? (
+                    devParams.features.split(', ').map((f, i) => (
+                      <span 
+                        key={i} 
+                        style={{ 
+                          fontSize: '0.72rem', 
+                          background: 'rgba(255,255,255,0.03)', 
+                          border: '1px solid var(--border-color)', 
+                          color: 'var(--color-text-secondary)',
+                          padding: '3px 8px',
+                          borderRadius: '12px'
+                        }}
+                      >
+                        {f}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>None specified</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="detail-row">
+                <div className="detail-label">Project Overview</div>
+                <div className="detail-desc" style={{ fontSize: '0.92rem' }}>{devParams.notes}</div>
+              </div>
+            </>
+          ) : (
+            <div className="detail-row">
+              <div className="detail-label">Project Overview</div>
+              <div className="detail-desc" style={{ fontSize: '0.92rem' }}>{descText}</div>
+            </div>
+          )}
+
+          {/* Client contact info visible to admin */}
+          {isAdminView && (
+            <div className="detail-row" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem', marginTop: '0.5rem' }}>
+              <div className="detail-label">Client Details</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
+                  <User size={14} className="text-muted" /> <strong style={{ color: '#fff' }}>{request.customer_name}</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                  <Mail size={14} className="text-muted" /> {request.contact_info}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Original Attachments */}
           {request.attachments && request.attachments.length > 0 && (
             <div className="detail-row">
-              <div className="detail-label">Attached Files ({request.attachments.length})</div>
+              <div className="detail-label">Reference Files ({request.attachments.length})</div>
               <div className="attachments-grid">
                 {request.attachments.map((file, idx) => {
                   const isImg = file.type?.startsWith('image/') || file.url?.startsWith('data:image/')
@@ -295,23 +359,25 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
           )}
         </div>
 
-        {/* Right Side: Message Inbox Thread */}
+        {/* Right Side: Chat Feed */}
         <div className="chat-container glass-card">
           <div className="chat-header">
             <div className="chat-header-title">
-              <MessageSquare size={18} className="text-primary" style={{ color: 'var(--color-primary)' }} />
-              Project Chat
+              <MessageSquare size={18} className="text-primary" />
+              <span>Project Chatroom</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-              <Sparkles size={12} className="text-primary" style={{ color: 'var(--color-secondary)' }} />
-              Live Conversation
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+              <span className="live-dot"></span>
+              <span>Syncing live</span>
             </div>
           </div>
 
-          {/* Messages List */}
           <div className="chat-messages-area">
             {request.thread && request.thread.length > 0 ? (
               request.thread.map((msg, idx) => {
+                // If it is the first message block describing the project, we skip showing it here since it is already on the left
+                if (idx === 0 && devParams) return null
+                
                 const isSentByMe = isAdminView ? (msg.sender === 'admin') : (msg.sender === 'customer')
                 
                 return (
@@ -325,7 +391,6 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
                       </div>
                     )}
 
-                    {/* Chat file inside bubbles */}
                     {msg.attachment && (
                       <div 
                         className="chat-attachment-indicator" 
@@ -337,38 +402,38 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
                         ) : (
                           <FileText size={16} />
                         )}
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>
                           {msg.attachment.name}
                         </span>
-                        <Download size={12} />
+                        <Download size={12} style={{ opacity: 0.6 }} />
                       </div>
                     )}
                     
                     <div className="msg-meta">
-                      {msg.sender === 'admin' ? 'Yamen' : 'You'} • {formatDate(msg.created_at)}
+                      {msg.sender === 'admin' ? 'Yamen (Developer)' : 'You'} • {formatDate(msg.created_at)}
                     </div>
                   </div>
                 )
               })
             ) : (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
-                No messages yet.
+              <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--color-text-muted)' }}>
+                No messages yet. Send a message to start.
               </div>
             )}
             <div ref={chatEndRef} />
           </div>
 
-          {/* Send Message Area */}
+          {/* Send Input */}
           <div className="chat-input-area">
             <form onSubmit={handleSendMessage} className="chat-input-form">
               <button 
                 type="button" 
                 className="btn-nav" 
-                style={{ padding: '10px', borderRadius: '50%' }}
+                style={{ padding: '12px', borderRadius: '50%', flexShrink: 0 }}
                 onClick={() => fileInputRef.current?.click()}
-                title="Attach photo/file"
+                title="Attach reference mockups"
               >
-                <Paperclip size={18} />
+                <Paperclip size={16} />
               </button>
               
               <input 
@@ -383,7 +448,7 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
                 type="text" 
                 value={newMessage} 
                 onChange={e => setNewMessage(e.target.value)} 
-                placeholder="Type your message here..." 
+                placeholder="Send file mockups or messages here..." 
                 className="chat-input-field"
                 disabled={sending}
               />
@@ -416,7 +481,6 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
         </div>
       </div>
 
-      {/* Lightbox for file viewer */}
       {activeLightboxFile && (
         <Lightbox 
           file={activeLightboxFile} 

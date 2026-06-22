@@ -1,23 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { 
-  Send, 
-  Search, 
-  UploadCloud, 
-  FileText, 
-  X, 
-  Check, 
-  Copy, 
-  ArrowLeft, 
-  Clock, 
-  PlusCircle, 
-  Eye,
-  Paperclip,
-  CheckCircle2
+  Send, Search, UploadCloud, FileText, X, Check, Copy, ArrowLeft, 
+  Clock, PlusCircle, Eye, Paperclip, CheckCircle2, ChevronRight,
+  Sparkles, DollarSign, Zap, MessageSquare, Star, ArrowRight
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
   const [mode, setMode] = useState('home') // home, new, track, success
+  const [formStep, setFormStep] = useState(1) // 1, 2, 3
+
+  // Form Fields
   const [name, setName] = useState('')
   const [contact, setContact] = useState('')
   const [title, setTitle] = useState('')
@@ -65,12 +58,10 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
     }
   }, [])
 
-  // If track code is clicked from recent
   const handleTrackRecent = (code) => {
     onTrackRequest(code)
   }
 
-  // Generate unique tracking code
   const generateTrackingCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
     let code = 'DM-'
@@ -80,7 +71,6 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
     return code
   }
 
-  // File upload change handler
   const handleFileChange = async (e) => {
     const selectedFiles = Array.from(e.target.files)
     processFiles(selectedFiles)
@@ -88,18 +78,14 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
 
   const processFiles = async (selectedFiles) => {
     const newFiles = []
-    
     for (let file of selectedFiles) {
       if (file.size > 2.5 * 1024 * 1024) {
         alert(`File "${file.name}" exceeds the 2.5MB size limit.`)
         continue
       }
-
-      // Read as base64
       try {
         const base64 = await fileToBase64(file)
         const isImage = file.type.startsWith('image/')
-        
         newFiles.push({
           name: file.name,
           size: file.size,
@@ -111,7 +97,6 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
         console.error('Error reading file:', err)
       }
     }
-
     setFiles([...files, ...newFiles])
   }
 
@@ -130,18 +115,6 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
     setFiles(updated)
   }
 
-  const handleDragOver = (e) => {
-    e.preventDefault()
-  }
-
-  const handleDrop = (e) => {
-    e.preventDefault()
-    if (e.dataTransfer.files) {
-      processFiles(Array.from(e.dataTransfer.files))
-    }
-  }
-
-  // Submit Request
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!name.trim() || !contact.trim() || !title.trim() || !message.trim()) {
@@ -151,8 +124,6 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
 
     setIsSubmitting(true)
     const trackingCode = generateTrackingCode()
-
-    // Package attachments
     const attachments = files.map(f => ({
       name: f.name,
       url: f.base64,
@@ -160,7 +131,6 @@ export default function CustomerPortal({ onTrackRequest, activeTrackCode }) {
       type: f.type
     }))
 
-    // Format full details including custom web developer request parameters
     const formattedMessage = `--- Web Development Request ---
 Project Type: ${projectType}
 Estimated Budget: ${budget}
@@ -170,7 +140,6 @@ Requested Features: ${selectedFeatures.length > 0 ? selectedFeatures.join(', ') 
 --- Client Message / Notes ---
 ${message}`
 
-    // Thread initialization
     const initialThread = [
       {
         sender: 'customer',
@@ -197,15 +166,13 @@ ${message}`
 
       if (error) throw error
 
-      // Save code locally
       const updatedCodes = [
         { code: trackingCode, title: title, date: new Date().toLocaleDateString() },
         ...recentCodes.filter(c => c.code !== trackingCode)
-      ].slice(0, 10) // Limit to last 10
+      ].slice(0, 10)
 
       localStorage.setItem('dm_recent_requests', JSON.stringify(updatedCodes))
       setRecentCodes(updatedCodes)
-
       setGeneratedCode(trackingCode)
       setMode('success')
       
@@ -219,6 +186,7 @@ ${message}`
       setBudget('$1,500 - $5,000')
       setTimeline('Standard (2-4 weeks)')
       setSelectedFeatures([])
+      setFormStep(1)
     } catch (err) {
       console.error(err)
       alert('Error submitting request: ' + err.message)
@@ -227,12 +195,10 @@ ${message}`
     }
   }
 
-  // Track Code Submit
   const handleTrackSubmit = async (e) => {
     e.preventDefault()
     const cleanCode = searchCode.trim().toUpperCase()
     if (!cleanCode) return
-
     setIsSubmitting(true)
     setSearchError('')
 
@@ -244,7 +210,7 @@ ${message}`
         .single()
 
       if (error || !data) {
-        setSearchError('Invalid tracking code. Please verify and try again.')
+        setSearchError('Invalid tracking code. Please check and try again.')
       } else {
         onTrackRequest(cleanCode)
       }
@@ -262,18 +228,38 @@ ${message}`
     setTimeout(() => setCopied(false), 2000)
   }
 
+  // Next step validation
+  const validateStep = (step) => {
+    if (step === 1) {
+      if (!title.trim() || !projectType) {
+        alert('Please fill out the project title and select a type.')
+        return false
+      }
+    } else if (step === 2) {
+      if (!message.trim() || !budget || !timeline) {
+        alert('Please describe your project and select budget/timeline.')
+        return false
+      }
+    }
+    return true
+  }
+
   return (
     <div className="fade-in">
       {/* Home Mode */}
       {mode === 'home' && (
         <>
           <div className="landing-hero slide-up">
+            <div className="inline-badge">
+              <Sparkles size={14} className="text-primary" />
+              <span>Full-Stack Web Development Agency</span>
+            </div>
             <h1 className="hero-title">
               Need a Website? <br />
               <span className="hero-gradient-text">Let Yamen Build It.</span>
             </h1>
             <p className="hero-subtitle">
-              Tell me exactly what you need — a website, an app, an online store — and I'll bring it to life. Describe your project, set your budget and timeline, and we'll chat in real-time as I build it for you.
+              SaaS platforms, e-commerce, custom web applications, or landing pages. Build your project with fully transparent progress tracking, real-time messaging, and lightning-fast developer delivery.
             </p>
             <div className="hero-actions">
               <button onClick={() => setMode('new')} className="btn-hero-primary">
@@ -291,56 +277,76 @@ ${message}`
               <div className="feature-icon-wrapper">
                 <Send size={24} />
               </div>
-              <h3>Describe Your Vision</h3>
-              <p>Tell me what you want built — choose your project type, budget, timeline, and features. I'll handle the rest.</p>
+              <h3>1. Tell Your Vision</h3>
+              <p>Define project specifications, pick features, set budget, and upload guidelines in our secure developer portal.</p>
             </div>
             
             <div className="feature-card glass-card glass-card-glow">
               <div className="feature-icon-wrapper">
-                <Paperclip size={24} />
+                <MessageSquare size={24} />
               </div>
-              <h3>Share References</h3>
-              <p>Upload screenshots, mockups, logos, or any design references so I can match your exact vision.</p>
+              <h3>2. Real-Time Chat</h3>
+              <p>Skip complex email threads. Talk to me directly in a private, real-time project portal synced with database feeds.</p>
             </div>
 
             <div className="feature-card glass-card glass-card-glow">
               <div className="feature-icon-wrapper">
                 <CheckCircle2 size={24} />
               </div>
-              <h3>Track Progress Live</h3>
-              <p>Get a tracking code, watch your project status update in real-time, and message me directly as I work on it.</p>
+              <h3>3. Live Tracking</h3>
+              <p>Watch your project go from Pending, to In Progress, to Done. Direct file downloads and mockups loaded directly in chat.</p>
             </div>
           </div>
 
-          {/* Recent Requests Section */}
+          {/* Guarantee / Review Row */}
+          <div className="trust-row glass-card slide-up" style={{ animationDelay: '0.15s', margin: '0 auto 4rem', maxWidth: '850px', padding: '1.75rem 2rem', display: 'flex', justifyContent: 'space-around', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
+            <div className="trust-item" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div className="trust-stars" style={{ color: '#f59e0b', display: 'flex' }}>
+                <Star size={16} fill="#f59e0b" /><Star size={16} fill="#f59e0b" /><Star size={16} fill="#f59e0b" /><Star size={16} fill="#f59e0b" /><Star size={16} fill="#f59e0b" />
+              </div>
+              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>5.0 Rating on Upwork</span>
+            </div>
+            <div style={{ height: '24px', width: '1px', background: 'var(--border-color)', display: 'none' }} className="divider"></div>
+            <div className="trust-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Zap size={16} className="text-primary" style={{ color: 'var(--color-primary)' }} />
+              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>100% On-Time Delivery</span>
+            </div>
+            <div className="trust-item" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <DollarSign size={16} style={{ color: 'var(--status-completed)' }} />
+              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Flexible Budget Milestones</span>
+            </div>
+          </div>
+
+          {/* Active Projects List */}
           {recentCodes.length > 0 && (
-            <div className="slide-up" style={{ animationDelay: '0.2s', maxWidth: '650px', margin: '0 auto 3rem' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: '1rem', textAlign: 'left' }}>
-                Your Active Projects
+            <div className="slide-up" style={{ animationDelay: '0.2s', maxWidth: '700px', margin: '0 auto 3rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: '1.25rem', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={16} /> Your Projects
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {recentCodes.map((item, idx) => (
                   <div 
                     key={idx} 
                     onClick={() => handleTrackRecent(item.code)}
-                    className="glass-card" 
+                    className="glass-card active-project-row"
                     style={{ 
                       display: 'flex', 
                       justifyContent: 'space-between', 
                       alignItems: 'center', 
-                      padding: '1rem 1.25rem', 
+                      padding: '1.1rem 1.5rem', 
                       cursor: 'pointer',
-                      border: '1px solid var(--border-color)'
+                      border: '1px solid var(--border-color)',
+                      transition: 'all 0.25s'
                     }}
                   >
                     <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem' }}>{item.title}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-                        Submitted {item.date}
+                      <div style={{ fontWeight: 750, color: '#fff', fontSize: '1rem' }}>{item.title}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '3px' }}>
+                        Created {item.date}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.85rem', color: 'var(--color-primary)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.85rem', color: 'var(--color-primary-light)', background: 'rgba(139,92,246,0.06)', padding: '4px 10px', borderRadius: '4px', border: '1px solid rgba(139,92,246,0.1)' }}>
                         {item.code}
                       </span>
                       <Eye size={16} className="text-muted" />
@@ -353,198 +359,288 @@ ${message}`
         </>
       )}
 
-      {/* New Request Mode */}
+      {/* New Request Mode (Wizard Stepper Form) */}
       {mode === 'new' && (
         <div className="slide-up">
           <div className="back-btn-wrapper">
-            <button onClick={() => setMode('home')} className="btn-back">
+            <button onClick={() => { setMode('home'); setFormStep(1); }} className="btn-back">
               <ArrowLeft size={16} /> Back to Home
             </button>
           </div>
 
           <div className="form-container glass-card">
-            <div className="form-title-area">
-              <h2>What Do You Want Me to Build?</h2>
-              <p>Fill out the details below and I'll review your project and get back to you with a plan. The more details you provide, the faster we can get started.</p>
+            {/* Step Indicators */}
+            <div className="stepper-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem' }}>
+              {[1, 2, 3].map((stepNum) => (
+                <div 
+                  key={stepNum} 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px', 
+                    color: formStep === stepNum ? '#fff' : (formStep > stepNum ? 'var(--status-completed)' : 'var(--color-text-muted)'),
+                    fontWeight: formStep === stepNum ? 700 : 500,
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  <span style={{ 
+                    width: '24px', 
+                    height: '24px', 
+                    borderRadius: '50%', 
+                    background: formStep === stepNum ? 'var(--grad-primary)' : (formStep > stepNum ? 'var(--status-completed-bg)' : 'rgba(255,255,255,0.04)'),
+                    border: formStep === stepNum ? 'none' : `1px solid ${formStep > stepNum ? 'var(--status-completed-border)' : 'var(--border-color)'}`,
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    fontSize: '0.75rem',
+                    color: formStep === stepNum || formStep > stepNum ? '#fff' : 'var(--color-text-secondary)'
+                  }}>
+                    {formStep > stepNum ? <Check size={12} /> : stepNum}
+                  </span>
+                  <span>{stepNum === 1 ? 'Scope' : (stepNum === 2 ? 'Details' : 'Contact')}</span>
+                </div>
+              ))}
             </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">Your Full Name / Business *</label>
-                <input 
-                  type="text" 
-                  value={name} 
-                  onChange={e => setName(e.target.value)} 
-                  placeholder="e.g. Sarah Ahmed or Coffee Corner LLC" 
-                  required
-                />
-              </div>
+            <div className="form-title-area">
+              <h2>
+                {formStep === 1 && "What project scope is needed?"}
+                {formStep === 2 && "Tell me project specifications"}
+                {formStep === 3 && "Where should I contact you?"}
+              </h2>
+              <p>
+                {formStep === 1 && "Start by naming your project scope and selecting core features."}
+                {formStep === 2 && "Enter your estimated budget, timeline, and detail description."}
+                {formStep === 3 && "Provide your details so we can initiate live chat tracking."}
+              </p>
+            </div>
 
-              <div className="form-group">
-                <label className="form-label">How Can I Reach You? (Email or Phone) *</label>
-                <input 
-                  type="text" 
-                  value={contact} 
-                  onChange={e => setContact(e.target.value)} 
-                  placeholder="e.g. sarah@gmail.com or +961 71 123456" 
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Project Name / What Are You Building? *</label>
-                <input 
-                  type="text" 
-                  value={title} 
-                  onChange={e => setTitle(e.target.value)} 
-                  placeholder="e.g. My Coffee Shop Website / Online Store for Clothing Brand" 
-                  required
-                />
-              </div>
-
-              {/* Web Dev Questionnaire Section */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Project Type *</label>
-                  <select value={projectType} onChange={e => setProjectType(e.target.value)}>
-                    <option value="Custom Web App">Custom Web App</option>
-                    <option value="E-commerce Store">E-commerce Store</option>
-                    <option value="Landing Page / Showcase">Landing Page / Showcase</option>
-                    <option value="Mobile App Development">Mobile App Development</option>
-                    <option value="SEO & Performance Optimization">SEO & Performance</option>
-                    <option value="Other / Consultancy">Other / Consultancy</option>
-                  </select>
-                </div>
-
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Estimated Budget *</label>
-                  <select value={budget} onChange={e => setBudget(e.target.value)}>
-                    <option value="< $500">&lt; $500</option>
-                    <option value="$500 - $1,500">$500 - $1,500</option>
-                    <option value="$1,500 - $5,000">$1,500 - $5,000</option>
-                    <option value="$5,000+">$5,000+</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Target Timeline *</label>
-                <select value={timeline} onChange={e => setTimeline(e.target.value)}>
-                  <option value="Urgently (< 2 weeks)">Urgently (&lt; 2 weeks)</option>
-                  <option value="Standard (2-4 weeks)">Standard (2-4 weeks)</option>
-                  <option value="Flexible (1-2 months)">Flexible (1-2 months)</option>
-                  <option value="Long Term Collaboration">Long Term Collaboration</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">What Features Do You Need?</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
-                  {availableFeatures.map((feat) => {
-                    const isSelected = selectedFeatures.includes(feat);
-                    return (
-                      <label 
-                        key={feat} 
-                        style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '8px', 
-                          cursor: 'pointer',
-                          fontSize: '0.85rem',
-                          color: isSelected ? '#fff' : 'var(--color-text-secondary)',
-                          background: isSelected ? 'rgba(139, 92, 246, 0.1)' : 'rgba(255,255,255,0.02)',
-                          border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--border-color)',
-                          boxShadow: isSelected ? '0 0 10px rgba(139, 92, 246, 0.15)' : 'none',
-                          padding: '8px 12px',
-                          borderRadius: '6px',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        <input 
-                          type="checkbox" 
-                          checked={isSelected}
-                          onChange={() => toggleFeature(feat)}
-                          style={{ width: 'auto', cursor: 'pointer' }}
-                        />
-                        {feat}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Tell Me More About Your Project *</label>
-                <textarea 
-                  value={message} 
-                  onChange={e => setMessage(e.target.value)} 
-                  placeholder="Describe what you want built in detail — what pages do you need? Any specific colors or style? Do you have a logo? Any website examples you like? The more you tell me, the better I can deliver..." 
-                  rows={5}
-                  required
-                />
-              </div>
-
-              {/* Upload Zone */}
-              <div className="form-group">
-                <label className="form-label">Upload References — Logos, Mockups, Screenshots (Max 2.5MB each)</label>
-                <div 
-                  className="upload-zone"
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  onClick={() => document.getElementById('file-input').click()}
-                >
-                  <input 
-                    type="file" 
-                    id="file-input" 
-                    className="hidden-file-input" 
-                    multiple 
-                    onChange={handleFileChange}
-                    accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
-                  />
-                  <div className="upload-icon-wrapper">
-                    <UploadCloud size={36} />
+            <form onSubmit={(e) => { e.preventDefault(); }}>
+              {/* STEP 1: SCOPE */}
+              {formStep === 1 && (
+                <div className="fade-in">
+                  <div className="form-group">
+                    <label className="form-label">Project Name / What Are You Building? *</label>
+                    <input 
+                      type="text" 
+                      value={title} 
+                      onChange={e => setTitle(e.target.value)} 
+                      placeholder="e.g. Online Coffee Delivery Shop or SaaS Analytics Dashboard" 
+                      required
+                    />
                   </div>
-                  <div className="upload-text-main">Drag & Drop your files here</div>
-                  <div className="upload-text-sub">logos, screenshots, mockups — or click to browse</div>
-                </div>
 
-                {/* Previews */}
-                {files.length > 0 && (
-                  <div className="files-preview-list">
-                    {files.map((file, index) => (
-                      <div key={index} className="file-preview-card">
-                        {file.preview ? (
-                          <img src={file.preview} alt="Preview" className="preview-image" />
-                        ) : (
-                          <div className="preview-file-icon">
-                            <FileText size={24} />
-                          </div>
-                        )}
-                        <div className="preview-file-name">{file.name}</div>
-                        <button 
-                          type="button" 
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            removeFile(index)
-                          }} 
-                          className="btn-remove-file"
-                        >
-                          <X size={12} />
-                        </button>
+                  <div className="form-group">
+                    <label className="form-label">Project Type *</label>
+                    <select value={projectType} onChange={e => setProjectType(e.target.value)}>
+                      <option value="Custom Web App">Custom Web App</option>
+                      <option value="E-commerce Store">E-commerce Store</option>
+                      <option value="Landing Page / Showcase">Landing Page / Showcase</option>
+                      <option value="Mobile App Development">Mobile App Development</option>
+                      <option value="SEO & Performance Optimization">SEO & Performance</option>
+                      <option value="Other / Consultancy">Other / Consultancy</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Key Features Required</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
+                      {availableFeatures.map((feat) => {
+                        const isSelected = selectedFeatures.includes(feat);
+                        return (
+                          <label 
+                            key={feat} 
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '10px', 
+                              cursor: 'pointer',
+                              fontSize: '0.85rem',
+                              color: isSelected ? '#fff' : 'var(--color-text-secondary)',
+                              background: isSelected ? 'rgba(139, 92, 246, 0.05)' : 'rgba(255,255,255,0.01)',
+                              border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--border-color)',
+                              padding: '10px 14px',
+                              borderRadius: '8px',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <input 
+                              type="checkbox" 
+                              checked={isSelected}
+                              onChange={() => toggleFeature(feat)}
+                              style={{ width: 'auto', cursor: 'pointer' }}
+                            />
+                            {feat}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => { if (validateStep(1)) setFormStep(2) }}
+                      className="btn-hero-primary"
+                      style={{ padding: '10px 24px' }}
+                    >
+                      Next Step <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: DETAILS & BUDGET */}
+              {formStep === 2 && (
+                <div className="fade-in">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.5rem' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Estimated Budget *</label>
+                      <select value={budget} onChange={e => setBudget(e.target.value)}>
+                        <option value="< $500">&lt; $500</option>
+                        <option value="$500 - $1,500">$500 - $1,500</option>
+                        <option value="$1,500 - $5,000">$1,500 - $5,000</option>
+                        <option value="$5,000+">$5,000+</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Target Timeline *</label>
+                      <select value={timeline} onChange={e => setTimeline(e.target.value)}>
+                        <option value="Urgently (< 2 weeks)">Urgently (&lt; 2 weeks)</option>
+                        <option value="Standard (2-4 weeks)">Standard (2-4 weeks)</option>
+                        <option value="Flexible (1-2 months)">Flexible (1-2 months)</option>
+                        <option value="Long Term Collaboration">Long Term Collaboration</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Tell Me More About Your Project *</label>
+                    <textarea 
+                      value={message} 
+                      onChange={e => setMessage(e.target.value)} 
+                      placeholder="Please specify pages needed, target audience, style preferences, layout guidelines, or any competitors' sites you like..." 
+                      rows={5}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">References & Attachments (Max 2.5MB each)</label>
+                    <div 
+                      className="upload-zone"
+                      onClick={() => document.getElementById('file-input').click()}
+                    >
+                      <input 
+                        type="file" 
+                        id="file-input" 
+                        className="hidden-file-input" 
+                        multiple 
+                        onChange={handleFileChange}
+                        accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
+                      />
+                      <div className="upload-icon-wrapper">
+                        <UploadCloud size={32} />
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <div className="upload-text-main">Drag & Drop reference files or click to browse</div>
+                      <div className="upload-text-sub">Logos, guidelines, structure examples</div>
+                    </div>
 
-              <button 
-                type="submit" 
-                className="btn-submit-form" 
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Sending to Yamen...' : 'Submit My Project'}
-                <Send size={18} />
-              </button>
+                    {files.length > 0 && (
+                      <div className="files-preview-list">
+                        {files.map((file, index) => (
+                          <div key={index} className="file-preview-card">
+                            {file.preview ? (
+                              <img src={file.preview} alt="Preview" className="preview-image" />
+                            ) : (
+                              <div className="preview-file-icon">
+                                <FileText size={22} />
+                              </div>
+                            )}
+                            <div className="preview-file-name">{file.name}</div>
+                            <button 
+                              type="button" 
+                              onClick={(e) => { e.stopPropagation(); removeFile(index); }} 
+                              className="btn-remove-file"
+                            >
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setFormStep(1)}
+                      className="btn-hero-secondary"
+                      style={{ padding: '10px 20px' }}
+                    >
+                      Back
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => { if (validateStep(2)) setFormStep(3) }}
+                      className="btn-hero-primary"
+                      style={{ padding: '10px 24px' }}
+                    >
+                      Next Step <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: CONTACT DETAILS & SUBMIT */}
+              {formStep === 3 && (
+                <div className="fade-in">
+                  <div className="form-group">
+                    <label className="form-label">Your Full Name / Business *</label>
+                    <input 
+                      type="text" 
+                      value={name} 
+                      onChange={e => setName(e.target.value)} 
+                      placeholder="e.g. Sarah J. or Alpha Digital LLC" 
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Contact Info (Email or Phone) *</label>
+                    <input 
+                      type="text" 
+                      value={contact} 
+                      onChange={e => setContact(e.target.value)} 
+                      placeholder="e.g. sarah@alpha.com or +961 71 123 456" 
+                      required
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setFormStep(2)}
+                      className="btn-hero-secondary"
+                      style={{ padding: '10px 20px' }}
+                      disabled={isSubmitting}
+                    >
+                      Back
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={handleSubmit}
+                      className="btn-hero-primary"
+                      style={{ padding: '10px 24px' }}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Submitting...' : 'Submit Request'} 
+                      <Send size={16} style={{ marginLeft: 6 }} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </form>
           </div>
         </div>
@@ -562,7 +658,7 @@ ${message}`
           <div className="tracking-search-container glass-card">
             <div className="tracking-search-title">Track Your Project</div>
             <p className="tracking-search-desc">
-              Enter the tracking code you received when you submitted your project. You'll be able to see the status, chat with Yamen, and follow the progress live.
+              Enter your unique tracking code (DM-XXXXXX) to view status, message Yamen directly, and monitor database deployment.
             </p>
 
             <form onSubmit={handleTrackSubmit} className="tracking-search-form">
@@ -599,9 +695,9 @@ ${message}`
           <div className="success-icon-wrapper">
             <Check size={40} />
           </div>
-          <h2 className="success-title">Project Submitted to Yamen!</h2>
+          <h2 className="success-title">Project Received by Yamen!</h2>
           <p className="success-desc">
-            Your project details have been sent. Save the tracking code below — you'll need it to check on progress, message Yamen directly, and receive updates as your project is being built.
+            Your tracking code has been generated. Use it to check status updates, chat with me, and follow development live.
           </p>
 
           <div className="tracking-code-display-box">
@@ -615,9 +711,9 @@ ${message}`
 
           {copied && <div className="copied-toast">Copied to clipboard!</div>}
 
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '1.25rem', justifyContent: 'center' }}>
             <button onClick={() => onTrackRequest(generatedCode)} className="btn-hero-primary">
-              <Eye size={18} /> View Project & Chat with Yamen
+              <Eye size={18} /> Enter Project Room
             </button>
             <button onClick={() => setMode('home')} className="btn-hero-secondary">
               Back to Home
