@@ -6,8 +6,10 @@ import {
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import Lightbox from './Lightbox'
+import { useToast } from './Toast'
 
 export default function RequestDetails({ trackingCode, onBack, isAdminView = false }) {
+  const toast = useToast()
   const [request, setRequest] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -94,7 +96,7 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
     if (!file) return
 
     if (file.size > 2.5 * 1024 * 1024) {
-      alert('Files in chat must be under 2.5MB.')
+      toast('Files in chat must be under 2.5MB.', 'warning')
       return
     }
 
@@ -162,7 +164,7 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
       }
     } catch (err) {
       console.error(err)
-      alert('Failed to send message: ' + err.message)
+      toast('Failed to send message: ' + err.message, 'error')
     } finally {
       setSending(false)
     }
@@ -427,7 +429,10 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
                     )}
                     
                     <div className="msg-meta">
-                      {msg.sender === 'admin' ? 'Yamen (Developer)' : 'You'} • {formatDate(msg.created_at)}
+                      {msg.sender === 'admin' 
+                        ? (isAdminView ? 'You' : 'Yamen (Developer)') 
+                        : (isAdminView ? (request.customer_name || 'Client') : 'You')
+                      } • {formatDate(msg.created_at)}
                     </div>
                   </div>
                 )

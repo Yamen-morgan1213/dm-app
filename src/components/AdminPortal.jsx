@@ -6,8 +6,10 @@ import {
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import RequestDetails from './RequestDetails'
+import { useToast } from './Toast'
 
 export default function AdminPortal() {
+  const toast = useToast()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
   const [shake, setShake] = useState(false)
@@ -19,7 +21,6 @@ export default function AdminPortal() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedCode, setSelectedCode] = useState(null)
   const [mobilePane, setMobilePane] = useState('list')
-  const [toasts, setToasts] = useState([])
   const [lastFetchCount, setLastFetchCount] = useState(0)
 
   // Check auth on load
@@ -35,14 +36,10 @@ export default function AdminPortal() {
     }
   }, [])
 
-  // Toast helper
+  // Toast helper (wraps global toast)
   const addToast = useCallback((title, message, type = 'info') => {
-    const id = Date.now()
-    setToasts(prev => [...prev, { id, title, message, type }])
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id))
-    }, 5000)
-  }, [])
+    toast(`${title}: ${message}`, type === 'success' ? 'success' : 'info')
+  }, [toast])
 
   // Fetch all requests
   const fetchAllRequests = useCallback(async () => {
@@ -153,7 +150,7 @@ export default function AdminPortal() {
       addToast('Status Updated', `Request marked as ${newStatus.replace('_', ' ')}`)
     } catch (err) {
       console.error(err)
-      alert('Failed to update status: ' + err.message)
+      toast('Failed to update status: ' + err.message, 'error')
     }
   }
 
@@ -172,7 +169,7 @@ export default function AdminPortal() {
       }
       addToast('Request Deleted', 'The request has been permanently removed.')
     } catch (err) {
-      alert('Failed to delete: ' + err.message)
+      toast('Failed to delete: ' + err.message, 'error')
     }
   }
 
