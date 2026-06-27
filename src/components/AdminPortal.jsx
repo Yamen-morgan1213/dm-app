@@ -241,23 +241,6 @@ export default function AdminPortal() {
 
   return (
     <div className="fade-in" style={{ width: '100%' }}>
-      {/* Toast Notifications */}
-      {toasts.length > 0 && (
-        <div className="toast-container">
-          {toasts.map(t => (
-            <div key={t.id} className="toast">
-              <div className="toast-icon">
-                <Bell size={18} />
-              </div>
-              <div className="toast-content">
-                <div className="toast-title">{t.title}</div>
-                <div className="toast-message">{t.message}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Stats Cards */}
       <div className="admin-stats-row">
         <div className="stat-card glass-card" onClick={() => setStatusFilter('all')}>
