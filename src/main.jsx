@@ -15,7 +15,9 @@ createRoot(document.getElementById('root')).render(
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    // Resolve sw.js path dynamically based on environment base URL
+    const swPath = `${import.meta.env.BASE_URL || './'}sw.js`
+    navigator.serviceWorker.register(swPath)
       .then((reg) => {
         console.log('Service Worker registered successfully:', reg.scope)
         // Force check for updates on load
