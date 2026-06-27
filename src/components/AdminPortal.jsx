@@ -334,7 +334,7 @@ export default function AdminPortal({ onOpenInstall }) {
             style={{ background: 'var(--grad-primary)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
             title="Download Admin App"
           >
-            <Download size={14} /> Download App
+            <Download size={16} /> Download Admin App
           </button>
           <button onClick={fetchAllRequests} className="btn-nav" disabled={loading} title="Refresh">
             <RefreshCw size={15} className={loading ? 'spin-anim' : ''} />

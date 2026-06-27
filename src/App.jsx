@@ -102,6 +102,18 @@ function App() {
     verifyDatabase()
   }, [])
 
+  // Dynamic manifest switching for separate Admin App PWA branding/icons
+  useEffect(() => {
+    const manifestEl = document.querySelector('link[rel="manifest"]')
+    if (manifestEl) {
+      if (view === 'admin') {
+        manifestEl.setAttribute('href', '/admin-manifest.json')
+      } else {
+        manifestEl.setAttribute('href', '/manifest.json')
+      }
+    }
+  }, [view])
+
   const handleTrackRequest = (code) => {
     setActiveTrackCode(code)
     setView('track')
