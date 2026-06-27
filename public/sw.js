@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yamen-dev-v1';
+const CACHE_NAME = 'yamen-dev-v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -17,22 +17,47 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(clients.claim());
+  e.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Clearing old service worker cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => clients.claim())
+  );
 });
 
 self.addEventListener('fetch', (e) => {
-  // Let network fetch bypass cache, fallback to cache for static pages when offline
-  if (e.request.mode === 'navigate') {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match('/index.html'))
-    );
-    return;
-  }
-  
+  // Let network fetch bypass cache first (Network-First strategy)
+  // This prevents the PWA from getting stuck on old cached JS/CSS files
   e.respondWith(
-    caches.match(e.request).then((response) => {
-      return response || fetch(e.request);
-    })
+    fetch(e.request)
+      .then((response) => {
+        // Cache the fetched file for offline use (if it's a safe GET request)
+        if (e.request.method === 'GET' && response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(e.request, responseToCache);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        // If network fails (offline), load from cache
+        return caches.match(e.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // If navigation request fails and nothing in cache, return index.html
+          if (e.request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
+        });
+      })
   );
 });
 
