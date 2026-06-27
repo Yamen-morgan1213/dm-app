@@ -107,6 +107,19 @@ function App() {
     setView('track')
   }
 
+  const handleDownloadApp = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null)
+        setShowInstallBtn(false)
+      }
+    } else {
+      setIsInstallOpen(true)
+    }
+  }
+
   return (
     <div className="app-container">
       {/* Floating background glowing blobs */}
@@ -133,7 +146,7 @@ function App() {
         <div className="nav-actions">
           {showInstallBtn && (
             <button 
-              onClick={() => setIsInstallOpen(true)}
+              onClick={handleDownloadApp}
               className="btn-nav" 
               style={{ marginRight: '0.75rem', background: 'var(--grad-primary)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
             >
@@ -179,7 +192,7 @@ function App() {
             )}
 
             {view === 'admin' && (
-              <AdminPortal onOpenInstall={() => setIsInstallOpen(true)} />
+              <AdminPortal onOpenInstall={handleDownloadApp} />
             )}
           </>
         )}
