@@ -260,7 +260,7 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
   }
 
   return (
-    <div className="fade-in" style={{ width: '100%' }}>
+    <div className="fade-in" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       {/* Header */}
       {!isAdminView && (
         <div className="back-btn-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
