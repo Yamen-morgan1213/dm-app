@@ -364,18 +364,23 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
         {/* Right Side: Chat Feed */}
         <div className="chat-container glass-card">
           <div className="chat-header">
-            <div className="chat-header-title">
-              <MessageSquare size={18} className="text-primary" />
-              <span>Project Chatroom</span>
+            <div className="chat-header-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <MessageSquare size={18} className="text-primary" style={{ flexShrink: 0 }} />
+              <div style={{ textAlign: 'left' }}>
+                <span style={{ display: 'block', fontSize: '0.92rem', fontWeight: 750, lineHeight: 1.2 }}>Project Chatroom</span>
+                <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 500, marginTop: '2px' }}>
+                  Client: <strong style={{ color: 'var(--color-primary-light)' }}>{request.customer_name}</strong> ({request.tracking_code})
+                </span>
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--color-text-muted)', flexShrink: 0 }}>
               <span className="live-dot"></span>
-              <span>Syncing live</span>
+              <span>Live Sync</span>
             </div>
           </div>
 
           <div className="chat-messages-area">
-            {request.thread && request.thread.length > 0 ? (
+            {request.thread && request.thread.some((msg, idx) => !(idx === 0 && devParams)) ? (
               request.thread.map((msg, idx) => {
                 // If it is the first message block describing the project, we skip showing it here since it is already on the left
                 if (idx === 0 && devParams) return null
