@@ -26,14 +26,14 @@ export const triggerLocalNotification = (title, body, url) => {
           type: 'SHOW_NOTIFICATION',
           title,
           body,
-          icon: '/icon-192.png',
+          icon: 'icon-192.png',
           url: url || window.location.href
         });
       }).catch(() => {
         // Fallback to standard browser notification
         new Notification(title, {
           body,
-          icon: '/icon-192.png'
+          icon: 'icon-192.png'
         });
       });
     } else {

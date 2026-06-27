@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { MessageSquare, Shield, Activity, Download } from 'lucide-react'
 import { supabase } from './lib/supabase'
+import { requestNotificationPermission } from './lib/notifications'
 import CustomerPortal from './components/CustomerPortal'
 import AdminPortal from './components/AdminPortal'
 import RequestDetails from './components/RequestDetails'
@@ -45,6 +46,11 @@ function App() {
       window.removeEventListener('beforeinstallprompt', handlePrompt)
       window.removeEventListener('appinstalled', handleAppInstalled)
     }
+  }, [])
+
+  // Request notification permission on first load for both customer and admin
+  useEffect(() => {
+    requestNotificationPermission()
   }, [])
 
   // Listen to hash changes for secret admin route (#admin)
@@ -107,9 +113,9 @@ function App() {
     const manifestEl = document.querySelector('link[rel="manifest"]')
     if (manifestEl) {
       if (view === 'admin') {
-        manifestEl.setAttribute('href', '/admin-manifest.json')
+        manifestEl.setAttribute('href', 'admin-manifest.json')
       } else {
-        manifestEl.setAttribute('href', '/manifest.json')
+        manifestEl.setAttribute('href', 'manifest.json')
       }
     }
   }, [view])

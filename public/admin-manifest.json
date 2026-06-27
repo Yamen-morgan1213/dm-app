@@ -1,4 +1,5 @@
 {
+  "id": "yamen-admin-pwa",
   "short_name": "Yamen Admin",
   "name": "Yamen Admin Command Center",
   "description": "Manage request specifications, client updates, and live project chats.",

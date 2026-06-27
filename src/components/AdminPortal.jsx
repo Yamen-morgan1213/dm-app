@@ -112,7 +112,23 @@ export default function AdminPortal({ onOpenInstall }) {
         } catch(e) {}
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests' }, (payload) => {
-        setRequests(prev => prev.map(r => r.id === payload.new.id ? payload.new : r))
+        setRequests(prev => {
+          const oldReq = prev.find(r => r.id === payload.new.id)
+          const oldLen = oldReq?.thread?.length || 0
+          const newLen = payload.new.thread?.length || 0
+          if (newLen > oldLen) {
+            const lastMsg = payload.new.thread[newLen - 1]
+            if (lastMsg && lastMsg.sender === 'customer') {
+              addToast(`💬 ${payload.new.customer_name}`, lastMsg.message || 'Sent an attachment', 'info')
+              triggerLocalNotification(
+                `Message from ${payload.new.customer_name}`,
+                lastMsg.message || 'Sent an attachment',
+                window.location.href
+              )
+            }
+          }
+          return prev.map(r => r.id === payload.new.id ? payload.new : r)
+        })
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'requests' }, (payload) => {
         setRequests(prev => prev.filter(r => r.id !== payload.old.id))

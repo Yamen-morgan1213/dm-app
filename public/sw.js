@@ -65,13 +65,15 @@ self.addEventListener('fetch', (e) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     const { title, body, icon, url } = event.data;
+    // Resolve icon relative to the service worker scope
+    const baseUrl = self.registration.scope;
     self.registration.showNotification(title, {
       body: body,
-      icon: icon || '/icon-192.png',
-      badge: '/icon-192.png',
+      icon: icon || (baseUrl + 'icon-192.png'),
+      badge: baseUrl + 'icon-192.png',
       vibrate: [200, 100, 200],
       data: {
-        url: url || '/'
+        url: url || baseUrl
       }
     });
   }
