@@ -7,6 +7,7 @@ import {
 import { supabase } from '../lib/supabase'
 import Lightbox from './Lightbox'
 import { useToast } from './Toast'
+import { triggerLocalNotification } from '../lib/notifications'
 
 export default function RequestDetails({ trackingCode, onBack, isAdminView = false }) {
   const toast = useToast()
@@ -32,6 +33,22 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
         .single()
 
       if (error) throw error
+
+      // Notify on new message from other side
+      if (request && data && data.thread && request.thread) {
+        if (data.thread.length > request.thread.length) {
+          const newMsg = data.thread[data.thread.length - 1]
+          const isFromOtherSide = isAdminView ? (newMsg.sender === 'customer') : (newMsg.sender === 'admin')
+          if (isFromOtherSide) {
+            triggerLocalNotification(
+              isAdminView ? `Message from ${data.customer_name}` : "Yamen (Developer)",
+              newMsg.message,
+              window.location.href
+            )
+          }
+        }
+      }
+
       setRequest(data)
     } catch (err) {
       console.error(err)
@@ -45,6 +62,13 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
     fetchRequestDetails(true)
   }, [trackingCode])
 
+  // Request notifications permission on load
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [])
+
   // Setup Real-time & Polling
   useEffect(() => {
     if (!request?.id) return
@@ -56,6 +80,20 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'requests', filter: `id=eq.${request.id}` },
         (payload) => {
+          // Notify on new message from other side
+          if (request && payload.new && payload.new.thread && request.thread) {
+            if (payload.new.thread.length > request.thread.length) {
+              const newMsg = payload.new.thread[payload.new.thread.length - 1]
+              const isFromOtherSide = isAdminView ? (newMsg.sender === 'customer') : (newMsg.sender === 'admin')
+              if (isFromOtherSide) {
+                triggerLocalNotification(
+                  isAdminView ? `Message from ${payload.new.customer_name}` : "Yamen (Developer)",
+                  newMsg.message,
+                  window.location.href
+                )
+              }
+            }
+          }
           setRequest(payload.new)
         }
       )

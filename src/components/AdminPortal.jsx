@@ -2,13 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { 
   Lock, Search, Filter, LogOut, ChevronRight, MessageSquare, RefreshCw,
   FolderOpen, ArrowLeft, Mail, User, CheckCircle2, Calendar, Sparkles,
-  Bell, Trash2, TrendingUp, Clock, AlertCircle, Zap
+  Bell, Trash2, TrendingUp, Clock, AlertCircle, Zap, Download
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import RequestDetails from './RequestDetails'
 import { useToast } from './Toast'
+import { triggerLocalNotification } from '../lib/notifications'
 
-export default function AdminPortal() {
+export default function AdminPortal({ onOpenInstall }) {
   const toast = useToast()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
@@ -92,6 +93,14 @@ export default function AdminPortal() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requests' }, (payload) => {
         setRequests(prev => [payload.new, ...prev])
         addToast('🔔 New Project Request', `${payload.new.customer_name} — ${payload.new.title}`, 'success')
+        
+        // Trigger local notification
+        triggerLocalNotification(
+          "New Project Request!",
+          `${payload.new.customer_name} — ${payload.new.title}`,
+          window.location.href + "#admin"
+        )
+
         try {
           const ctx = new (window.AudioContext || window.webkitAudioContext)()
           const osc = ctx.createOscillator()
@@ -294,6 +303,14 @@ export default function AdminPortal() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button 
+            onClick={onOpenInstall} 
+            className="btn-nav" 
+            style={{ background: 'var(--grad-primary)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+            title="Download Admin App"
+          >
+            <Download size={14} /> Download App
+          </button>
           <button onClick={fetchAllRequests} className="btn-nav" disabled={loading} title="Refresh">
             <RefreshCw size={15} className={loading ? 'spin-anim' : ''} />
           </button>

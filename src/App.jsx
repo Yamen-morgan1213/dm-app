@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { MessageSquare, Shield, Activity } from 'lucide-react'
+import { MessageSquare, Shield, Activity, Download } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import CustomerPortal from './components/CustomerPortal'
 import AdminPortal from './components/AdminPortal'
 import RequestDetails from './components/RequestDetails'
 import DBWarning from './components/DBWarning'
+import PWAInstallModal from './components/PWAInstallModal'
 import './App.css'
 
 function App() {
@@ -12,6 +13,39 @@ function App() {
   const [activeTrackCode, setActiveTrackCode] = useState('')
   const [dbValid, setDbValid] = useState(null) // null = loading, true = OK, false = error/missing table
   const [dbError, setDbError] = useState(null)
+  
+  // PWA States
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const [isInstallOpen, setIsInstallOpen] = useState(false)
+  const [showInstallBtn, setShowInstallBtn] = useState(true)
+
+  // Listen to beforeinstallprompt event
+  useEffect(() => {
+    const handlePrompt = (e) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+      setShowInstallBtn(true)
+    }
+
+    const handleAppInstalled = () => {
+      setDeferredPrompt(null)
+      setShowInstallBtn(false)
+      console.log('PWA app installed successfully!')
+    }
+
+    window.addEventListener('beforeinstallprompt', handlePrompt)
+    window.addEventListener('appinstalled', handleAppInstalled)
+
+    // Check if already in standalone (app) mode
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setShowInstallBtn(false)
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handlePrompt)
+      window.removeEventListener('appinstalled', handleAppInstalled)
+    }
+  }, [])
 
   // Listen to hash changes for secret admin route (#admin)
   useEffect(() => {
@@ -88,6 +122,15 @@ function App() {
         </a>
 
         <div className="nav-actions">
+          {showInstallBtn && (
+            <button 
+              onClick={() => setIsInstallOpen(true)}
+              className="btn-nav" 
+              style={{ marginRight: '0.75rem', background: 'var(--grad-primary)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+            >
+              <Download size={14} /> Download App
+            </button>
+          )}
           {view === 'admin' ? (
             <span className="status-badge in_progress" style={{ fontSize: '0.75rem' }}>
               Admin Session Active
@@ -127,11 +170,18 @@ function App() {
             )}
 
             {view === 'admin' && (
-              <AdminPortal />
+              <AdminPortal onOpenInstall={() => setIsInstallOpen(true)} />
             )}
           </>
         )}
       </main>
+
+      <PWAInstallModal 
+        isOpen={isInstallOpen} 
+        onClose={() => setIsInstallOpen(false)} 
+        deferredPrompt={deferredPrompt} 
+        onInstallSuccess={() => setShowInstallBtn(false)} 
+      />
 
       {/* Footer */}
       <footer className="footer">
