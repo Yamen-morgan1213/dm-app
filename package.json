@@ -1,13 +1,29 @@
 {
   "name": "dm-app",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "1.0.0",
+  "main": "electron.cjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron:start": "electron .",
+    "electron:pack": "electron-builder build --win --dir",
+    "electron:dist": "electron-builder build --win"
+  },
+  "build": {
+    "appId": "com.yamen.dmapp",
+    "productName": "DM App",
+    "directories": {
+      "output": "C:/Users/eeror/dm-app-dist"
+    },
+    "win": {
+      "icon": "public/icon-512.png",
+      "target": [
+        "nsis"
+      ]
+    }
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",
@@ -20,6 +36,8 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "electron": "^42.5.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
