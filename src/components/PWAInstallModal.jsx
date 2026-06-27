@@ -52,7 +52,7 @@ export default function PWAInstallModal({ isOpen, onClose, deferredPrompt, onIns
         </button>
 
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ width: '56px', height: '56px', background: 'rgba(139,92,246,0.15)', color: 'var(--color-primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justify: 'center', margin: '0 auto 1rem' }}>
+          <div style={{ width: '56px', height: '56px', background: 'rgba(139,92,246,0.15)', color: 'var(--color-primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
             <Download size={28} />
           </div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff', marginBottom: '0.5rem' }}>Download Mobile & Desktop App</h2>
