@@ -158,7 +158,7 @@ function App() {
               Admin Session Active
             </span>
           ) : (
-            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+            <span className="navbar-subtitle" style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
               Web Developer for Hire
             </span>
           )}

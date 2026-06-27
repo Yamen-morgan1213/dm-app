@@ -240,12 +240,36 @@ export default function AdminPortal({ onOpenInstall }) {
               />
             </div>
             {loginError && <div className="login-error-msg">{loginError}</div>}
-            <button type="submit" className="btn-admin-login">
-              <Zap size={16} style={{ marginRight: 6 }} /> Authenticate
-            </button>
-          </form>
-        </div>
-      </div>
+             <button type="submit" className="btn-admin-login">
+               <Zap size={16} style={{ marginRight: 6 }} /> Authenticate
+             </button>
+           </form>
+           <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>
+             <button 
+               onClick={onOpenInstall}
+               style={{
+                 background: 'rgba(255, 255, 255, 0.03)',
+                 border: '1px solid var(--border-color)',
+                 color: 'var(--color-text-secondary)',
+                 padding: '10px 16px',
+                 borderRadius: '8px',
+                 fontSize: '0.85rem',
+                 display: 'flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 gap: '8px',
+                 width: '100%',
+                 cursor: 'pointer',
+                 transition: 'all 0.2s ease'
+               }}
+               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'; }}
+               onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+             >
+               <Download size={14} /> Download Admin App
+             </button>
+           </div>
+         </div>
+       </div>
     )
   }
 

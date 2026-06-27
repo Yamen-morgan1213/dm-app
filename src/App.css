@@ -603,6 +603,86 @@
 @media (max-width: 950px) {
   .request-details-grid {
     grid-template-columns: 1fr;
+    max-height: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .request-details-grid {
+    gap: 1rem;
+  }
+
+  .details-panel {
+    padding: 1.25rem;
+    gap: 1rem;
+    max-height: none;
+  }
+
+  .detail-row {
+    padding-bottom: 0.85rem;
+  }
+
+  .detail-label {
+    font-size: 0.68rem;
+  }
+
+  .tracking-code-value {
+    font-size: 1rem !important;
+    word-break: break-all;
+  }
+
+  .detail-value {
+    font-size: 0.88rem;
+  }
+
+  .detail-desc {
+    font-size: 0.85rem;
+  }
+
+  .detail-row [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .chat-container {
+    max-height: 500px;
+  }
+
+  .chat-header {
+    padding: 0.85rem 1rem;
+  }
+
+  .chat-header-title {
+    font-size: 0.9rem;
+  }
+
+  .chat-messages-area {
+    padding: 1rem;
+    gap: 0.85rem;
+  }
+
+  .msg-bubble {
+    padding: 10px 14px;
+    font-size: 0.88rem;
+  }
+
+  .msg-bubble-wrapper {
+    max-width: 85%;
+  }
+
+  .chat-input-area {
+    padding: 0.85rem 1rem;
+  }
+
+  .back-btn-wrapper {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start !important;
+  }
+
+  .attachments-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 0.5rem;
   }
 }
 
@@ -1451,6 +1531,27 @@
   .stat-icon svg {
     width: 16px;
     height: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .brand {
+    font-size: 1.1rem;
+    gap: 0.5rem;
+  }
+
+  .brand-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .navbar-subtitle {
+    display: none !important;
   }
 }
 
