@@ -18,6 +18,7 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
   const [chatFile, setChatFile] = useState(null) // { name, base64, size, type }
   const [sending, setSending] = useState(false)
   const [activeLightboxFile, setActiveLightboxFile] = useState(null)
+  const [brokenImages, setBrokenImages] = useState({})
   
   const chatEndRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -378,7 +379,7 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
               <div className="detail-label">Reference Files ({request.attachments.length})</div>
               <div className="attachments-grid">
                 {request.attachments.map((file, idx) => {
-                  const isImg = file.type?.startsWith('image/') || file.url?.startsWith('data:image/')
+                  const isImg = (file.type?.startsWith('image/') || file.url?.startsWith('data:image/')) && !brokenImages[file.url]
                   return (
                     <div 
                       key={idx} 
@@ -387,7 +388,11 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
                       title={`${file.name} (${formatBytes(file.size)})`}
                     >
                       {isImg ? (
-                        <img src={file.url} alt={file.name} />
+                        <img 
+                          src={file.url} 
+                          alt={file.name} 
+                          onError={() => setBrokenImages(prev => ({ ...prev, [file.url]: true }))}
+                        />
                       ) : (
                         <FileText size={20} className="attachment-file-icon" />
                       )}
@@ -447,12 +452,13 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
                         }}
                         onClick={() => setActiveLightboxFile(msg.attachment)}
                       >
-                        {(msg.attachment.type?.startsWith('image/') || msg.attachment.url?.startsWith('data:image/')) ? (
+                        {((msg.attachment.type?.startsWith('image/') || msg.attachment.url?.startsWith('data:image/')) && !brokenImages[msg.attachment.url]) ? (
                           <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', transition: 'transform 0.2s' }} className="chat-image-preview-wrapper">
                             <img 
                               src={msg.attachment.url} 
                               alt={msg.attachment.name} 
                               style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', display: 'block' }}
+                              onError={() => setBrokenImages(prev => ({ ...prev, [msg.attachment.url]: true }))}
                             />
                             <div style={{ padding: '6px 12px', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '0.72rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>{msg.attachment.name}</span>

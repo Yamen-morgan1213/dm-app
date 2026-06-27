@@ -248,12 +248,12 @@ export default function AdminPortal({ onOpenInstall }) {
              <button 
                onClick={onOpenInstall}
                style={{
-                 background: 'rgba(255, 255, 255, 0.03)',
-                 border: '1px solid var(--border-color)',
-                 color: 'var(--color-text-secondary)',
-                 padding: '10px 16px',
+                 background: 'var(--grad-primary)',
+                 border: 'none',
+                 color: '#fff',
+                 padding: '12px 20px',
                  borderRadius: '8px',
-                 fontSize: '0.85rem',
+                 fontSize: '0.9rem', fontWeight: '700', boxShadow: 'var(--shadow-glow)',
                  display: 'flex',
                  alignItems: 'center',
                  justifyContent: 'center',
@@ -262,10 +262,10 @@ export default function AdminPortal({ onOpenInstall }) {
                  cursor: 'pointer',
                  transition: 'all 0.2s ease'
                }}
-               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'; }}
-               onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+               onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = 'var(--shadow-glow-strong)'; }}
+               onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'var(--shadow-glow)'; }}
              >
-               <Download size={14} /> Download Admin App
+               <Download size={16} /> Download Admin App
              </button>
            </div>
          </div>
