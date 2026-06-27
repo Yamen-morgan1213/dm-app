@@ -58,6 +58,15 @@ function App() {
       }
     }
 
+    // Check if there is an active admin session on initial load and route to admin
+    const authSession = localStorage.getItem('dm_admin_session')
+    if (authSession) {
+      const timeElapsed = Date.now() - parseInt(authSession)
+      if (timeElapsed < 24 * 60 * 60 * 1000) {
+        window.location.hash = '#admin'
+      }
+    }
+
     // Check hash on initial load
     handleHashChange()
 

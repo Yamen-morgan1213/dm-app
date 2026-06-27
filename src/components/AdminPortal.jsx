@@ -144,6 +144,7 @@ export default function AdminPortal({ onOpenInstall }) {
     localStorage.removeItem('dm_admin_session')
     setSelectedCode(null)
     setMobilePane('list')
+    window.location.hash = '#customer'
   }
 
   const handleStatusChange = async (requestId, newStatus) => {
