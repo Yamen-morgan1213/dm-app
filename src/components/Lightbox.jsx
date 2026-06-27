@@ -2,6 +2,7 @@ import React from 'react'
 import { X, Download, FileText } from 'lucide-react'
 
 export default function Lightbox({ file, onClose }) {
+  const [isBroken, setIsBroken] = React.useState(false)
   if (!file) return null
 
   // Function to format file size
@@ -13,7 +14,7 @@ export default function Lightbox({ file, onClose }) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  const isImage = file.type?.startsWith('image/') || file.url?.startsWith('data:image/')
+  const isImage = (file.type?.startsWith('image/') || file.url?.startsWith('data:image/')) && !isBroken
 
   return (
     <div className="lightbox fade-in" onClick={onClose}>
@@ -23,7 +24,7 @@ export default function Lightbox({ file, onClose }) {
         </button>
 
         {isImage ? (
-          <img src={file.url} alt={file.name} />
+          <img src={file.url} alt={file.name} onError={() => setIsBroken(true)} />
         ) : (
           <div 
             style={{ 

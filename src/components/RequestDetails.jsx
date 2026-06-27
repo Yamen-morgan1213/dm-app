@@ -453,11 +453,11 @@ export default function RequestDetails({ trackingCode, onBack, isAdminView = fal
                         onClick={() => setActiveLightboxFile(msg.attachment)}
                       >
                         {((msg.attachment.type?.startsWith('image/') || msg.attachment.url?.startsWith('data:image/')) && !brokenImages[msg.attachment.url]) ? (
-                          <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', transition: 'transform 0.2s' }} className="chat-image-preview-wrapper">
+                          <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-md)', transition: 'transform 0.2s', background: 'rgba(0,0,0,0.2)' }} className="chat-image-preview-wrapper">
                             <img 
                               src={msg.attachment.url} 
                               alt={msg.attachment.name} 
-                              style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', display: 'block' }}
+                              style={{ maxWidth: '100%', maxHeight: '220px', objectFit: 'contain', display: 'block', margin: '0 auto' }}
                               onError={() => setBrokenImages(prev => ({ ...prev, [msg.attachment.url]: true }))}
                             />
                             <div style={{ padding: '6px 12px', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '0.72rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -16,7 +16,17 @@ createRoot(document.getElementById('root')).render(
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
-      .then((reg) => console.log('Service Worker registered successfully:', reg.scope))
+      .then((reg) => {
+        console.log('Service Worker registered successfully:', reg.scope)
+        // Force check for updates on load
+        reg.update()
+      })
       .catch((err) => console.error('Service Worker registration failed:', err));
+  });
+
+  // Reload the page when a new service worker takes control
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    console.log('New Service Worker activated, reloading page for latest updates...')
+    window.location.reload()
   });
 }
