@@ -50,9 +50,9 @@ function App() {
   // Listen to hash changes for secret admin route (#admin)
   useEffect(() => {
     const handleHashChange = () => {
-      if (window.location.hash === '#admin') {
+      if (window.location.hash.toLowerCase().startsWith('#admin')) {
         setView('admin')
-      } else if (window.location.hash === '' || window.location.hash === '#customer') {
+      } else if (window.location.hash === '' || window.location.hash.toLowerCase().startsWith('#customer')) {
         setView('customer')
         setActiveTrackCode('')
       }
